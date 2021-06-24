@@ -58,6 +58,7 @@ Example Write Multiple with Filter Script (with SAME filter script args for each
 * You can create a Filter Script (doesn't have to be Python) that reads in a CSV file from STDIN, modifies it, and outputs a new CSV file to STDOUT
 * Filter Script must return 0 on Success
 * The --filter cli arg can accept more arguments that will be passed to the Filter Script as args
+* Filter Script should be able to function as a standalone program `./filter_script.py < {example.csv} {arg1}`
 ```
 ./sim_csv_script.py -p 0 {example.csv} --write --pin-adm-json {IMSI_TO_ADM.json} --multiple --filter {filter_script.py} {arg1} {arg2} --dry-run 
 ```
