@@ -570,12 +570,6 @@ def get_args():
         help="JSON file with {key IMSI: value ADM PIN}. If value starts with '0x', it will be treated as hex. Otherwise it will be treated as ASCII",
     )
     write_group.add_argument(
-        "--dry-run",
-        help="Perform a 'dry run', don't actually program the card",
-        default=False,
-        action="store_true",
-    )
-    write_group.add_argument(
         "--skip-write-prompt",
         help="Don't show write prompt for each card to speed up writing",
         default=False,
@@ -744,36 +738,36 @@ def main():
         ############################################################################
 
         if args.write:
-            if not args.dry_run:
-                if not args.skip_write_prompt:
-                    ask_write = input(f"Sure you want to write? [y/N] (dry run = {args.dry_run}) ")
-                    if ask_write.lower() != "y":
-                        log.info("You chose to not write.  Quitting")
-                        return 0
-                # Need ADM Key if Writing Values to Card
-                if args.pin_adm is not None:
-                    pin_adm = args.pin_adm
-                elif args.pin_adm_json is not None:
-                    pin_adm = args.pin_adm_json.get(imsi, None)
-                    if pin_adm is None:
-                        log.error(f"IMSI {imsi} is not found in PIN ADM JSON file")
-                        return 1
-
-                try:
-                    check_pin_adm(card, pin_adm)
-                except Exception as e:
-                    log.error(f"({e.__class__.__name__}) {e}")
+            if not args.skip_write_prompt:
+                ask_write = input(f"Sure you want to write? [y/N] ")
+                if ask_write.lower() != "y":
+                    log.info("You chose to not write.  Quitting")
+                    return 0
+                    
+            # Need ADM Key if Writing Values to Card
+            if args.pin_adm is not None:
+                pin_adm = args.pin_adm
+            elif args.pin_adm_json is not None:
+                pin_adm = args.pin_adm_json.get(imsi, None)
+                if pin_adm is None:
+                    log.error(f"IMSI {imsi} is not found in PIN ADM JSON file")
                     return 1
 
-            #############################################################################
-            
-            # For each FieldName, FieldValue pair, write the value
-            df.apply(
-                lambda row: write_to_fieldname(
-                    card, row["FieldName"], row["FieldValue"], dry_run=args.dry_run, report_differences=args.show_diff
-                ),
-                axis=1,
-            )
+            try:
+                check_pin_adm(card, pin_adm)
+            except Exception as e:
+                log.error(f"({e.__class__.__name__}) {e}")
+                return 1
+
+        #############################################################################
+        
+        # For each FieldName, FieldValue pair, write the value
+        df.apply(
+            lambda row: write_to_fieldname(
+                card, row["FieldName"], row["FieldValue"], dry_run=not args.write, report_differences=args.show_diff
+            ),
+            axis=1,
+        )
 
         if args.multiple:
             log.info("Eject the sim card, and plug in another card. Press Ctrl+C to exit.\n")
