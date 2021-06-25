@@ -613,6 +613,12 @@ def get_args():
         "--log-file", type=str, default="sim.log", help="Specify log filename",
     )
     parser.add_argument(
+        "--show-diff",
+        help="Show symbols that point to difference in Read and Write values",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
         "--multiple",
         action="store_true",
         help="If multiple, loop and wait for next card once done. Press Ctrl+C to stop",
@@ -640,12 +646,6 @@ def get_args():
     write_group.add_argument(
         "--skip-write-prompt",
         help="Don't show write prompt for each card to speed up writing",
-        default=False,
-        action="store_true",
-    )
-    write_group.add_argument(
-        "--show-diff",
-        help="Show symbols that point to difference in Read and Write values",
         default=False,
         action="store_true",
     )
