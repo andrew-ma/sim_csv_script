@@ -1,3 +1,4 @@
 Pipfile*
 __pycache__/
 *.log
+.vscode/
