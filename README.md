@@ -27,24 +27,24 @@ Help and Documentation
 
 Example Read Single
 ```
-./sim_csv_script.py -p 0 {example.csv}
+./sim_csv_script.py {example.csv}
 ```
 
 Example Write Single (reading ADM pin from CLI arg)
 * Specify ASCII ADM pin without the leading "0x"
 ```
-./sim_csv_script.py -p 0 {example.csv} --write --pin-adm 0x8888888888888888
+./sim_csv_script.py {example.csv} --write --pin-adm 0x8888888888888888
 ```
 
 Example Write Single (reading hexadecimal ADM pin from JSON file with {"IMSI key" : "ADM pin value"})
 * Specify ASCII ADM pins without the leading "0x"
 ```
-./sim_csv_script.py -p 0 {example.csv} --write --pin-adm-json {IMSI_TO_ADM.json}
+./sim_csv_script.py {example.csv} --write --pin-adm-json {IMSI_TO_ADM.json}
 ```
 
 Example Read Multiple
 ```
-./sim_csv_script.py -p 0 {example.csv} --multiple
+./sim_csv_script.py {example.csv} --multiple
 ```
 
 Example Write Multiple with Filter Script (with SAME filter script args for each new card)
@@ -53,10 +53,10 @@ Example Write Multiple with Filter Script (with SAME filter script args for each
 * The --filter cli arg can accept more arguments that will be passed to the Filter Script as args
 * Filter Script should be able to function as a standalone program `./filter_script.py < {example.csv} {arg1}`
 ```
-./sim_csv_script.py -p 0 {example.csv} --write --pin-adm-json {IMSI_TO_ADM.json} --multiple --filter {filter_script.py} {arg1} {arg2}
+./sim_csv_script.py {example.csv} --write --pin-adm-json {IMSI_TO_ADM.json} --multiple --filter {filter_script.py} {arg1} {arg2}
 ```
 
 Example Write Multiple with Filter Script (with DIFFERENT filter script args for each new card)
 ```
-./sim_csv_script.py -p 0 {example.csv} --write --pin-adm-json {IMSI_TO_ADM.json} --multiple --filter {filter_script.py} --multiple-new-args
+./sim_csv_script.py {example.csv} --write --pin-adm-json {IMSI_TO_ADM.json} --multiple --filter {filter_script.py} --multiple-new-args
 ```
