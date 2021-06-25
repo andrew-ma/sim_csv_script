@@ -28,9 +28,7 @@ FIELDS_THAT_USE_RECORDS = ("SMSP", "PCSCF", "IMPU")
 LOG_FORMAT = "[%(levelname)s] %(message)s"
 
 logging.basicConfig(
-    level=logging.INFO,
-    format=LOG_FORMAT,
-    handlers=[logging.StreamHandler()],
+    level=logging.INFO, format=LOG_FORMAT, handlers=[logging.StreamHandler()],
 )
 log = logging.getLogger(__name__)
 
@@ -143,11 +141,15 @@ def check_that_fields_are_valid(df: pd.DataFrame):
         # For those FieldValues that are not a valid hex, they might be a format string
         # right now, just raise Exception if there are any field values that are not valid hex
         # Are there any that are false
-        raise InvalidDataframeError(f"Invalid hex values for fields: {df['FieldName'][~isValidHexDf].to_list()}")
+        raise InvalidDataframeError(
+            f"Invalid hex values for fields: {df['FieldName'][~isValidHexDf].to_list()}"
+        )
     return None
 
 
-def run_filter_command_on_csv_bytes(csv_bytes: bytes, filter_command: list) -> pd.DataFrame:
+def run_filter_command_on_csv_bytes(
+    csv_bytes: bytes, filter_command: list
+) -> pd.DataFrame:
     """
     Run filter command on csv filename, and returns dataframe
 
@@ -157,7 +159,9 @@ def run_filter_command_on_csv_bytes(csv_bytes: bytes, filter_command: list) -> p
         FilterCSVError
     """
 
-    p = subprocess.run(filter_command, stdout=subprocess.PIPE, input=csv_bytes, stderr=subprocess.PIPE)
+    p = subprocess.run(
+        filter_command, stdout=subprocess.PIPE, input=csv_bytes, stderr=subprocess.PIPE
+    )
 
     if p.returncode != 0:
         raise FilterCSVError(p.stderr.decode())
@@ -207,7 +211,9 @@ def check_isim_field(card: Card, field_name: str) -> None:
         else:
             ef = ALL_FieldName_to_EF[field_name]
             if not card.file_exists(ef):
-                raise RequiresIsimError(f"[{field_name}]: ISIM file {ef} does not exist on card")
+                raise RequiresIsimError(
+                    f"[{field_name}]: ISIM file {ef} does not exist on card"
+                )
 
     return None
 
@@ -233,7 +239,9 @@ def check_usim_field(card: Card, field_name: str) -> None:
         else:
             ef = ALL_FieldName_to_EF[field_name]
             if not card.file_exists(ef):
-                raise RequiresUsimError(f"[{field_name}]: USIM file {ef} does not exist on card")
+                raise RequiresUsimError(
+                    f"[{field_name}]: USIM file {ef} does not exist on card"
+                )
     return None
 
 
@@ -263,7 +271,9 @@ def verify_full_field_width(card: Card, field_name: str, field_value: HexStr):
         log.debug(f"[{field_name}]: Field Width = {field_width} bytes")
         return True
     else:
-        raise ValueError(f"[{field_name}]: Hex Str Num Bytes {field_value_num_bytes} != Field Width {field_width}")
+        raise ValueError(
+            f"[{field_name}]: Hex Str Num Bytes {field_value_num_bytes} != Field Width {field_width}"
+        )
     return None
 
 
@@ -291,7 +301,9 @@ def check_pin_adm(card: Card, pin_adm: Union[str, HexStr]) -> None:
     return None
 
 
-def read_field_data(card: Card, field_name: str, *, record_number: Optional[int] = None) -> str:
+def read_field_data(
+    card: Card, field_name: str, *, record_number: Optional[int] = None
+) -> str:
     """
     ReadFieldError: if problems reading record (for fields with records), or data (for normal fields)
 
@@ -326,10 +338,14 @@ def read_field_data(card: Card, field_name: str, *, record_number: Optional[int]
             try:
                 (res, sw) = card._scc.read_record(ef, record_number)
             except Exception as e:
-                raise ReadFieldError(f"[{field_name}]: Failed while reading binary field -- {e}")
+                raise ReadFieldError(
+                    f"[{field_name}]: Failed while reading binary field -- {e}"
+                )
 
             if sw != "9000":
-                raise ReadFieldError(f"[{field_name}]: Failed while reading binary field (Status {sw})")
+                raise ReadFieldError(
+                    f"[{field_name}]: Failed while reading binary field (Status {sw})"
+                )
 
             read_value = res
 
@@ -338,16 +354,25 @@ def read_field_data(card: Card, field_name: str, *, record_number: Optional[int]
         try:
             (read_value, sw) = card._scc.read_binary(ef)
         except Exception as e:
-            raise ReadFieldError(f"[{field_name}]: Failed while reading binary field -- {e}")
+            raise ReadFieldError(
+                f"[{field_name}]: Failed while reading binary field -- {e}"
+            )
 
         if sw != "9000":
-            raise ReadFieldError(f"[{field_name}]: Failed while reading binary field (Status {sw})")
+            raise ReadFieldError(
+                f"[{field_name}]: Failed while reading binary field (Status {sw})"
+            )
 
     return read_value
 
 
 def write_field_data(
-    card: Card, field_name: str, value_to_write: HexStr, *, record_number: Optional[int] = None, dry_run: bool = True
+    card: Card,
+    field_name: str,
+    value_to_write: HexStr,
+    *,
+    record_number: Optional[int] = None,
+    dry_run: bool = True,
 ) -> bool:
     """
     AssertionError: if invalid arguments like:
@@ -399,21 +424,31 @@ def write_field_data(
             for i in range(number_of_records):
                 rec_no = i + 1
                 # Update Each Record One By One
-                write_record_hex_str = value_to_write[i * record_size * 2 : (i * record_size + record_size) * 2]
-                log.info(f"[{field_name}]: Updating record {rec_no}: '{write_record_hex_str}'")
+                write_record_hex_str = value_to_write[
+                    i * record_size * 2 : (i * record_size + record_size) * 2
+                ]
+                log.info(
+                    f"[{field_name}]: Updating record {rec_no}: '{write_record_hex_str}'"
+                )
                 if not dry_run:
                     try:
-                        card._scc.update_record(ef, rec_no, write_record_hex_str, conserve=True)
+                        card._scc.update_record(
+                            ef, rec_no, write_record_hex_str, conserve=True
+                        )
                     except Exception as e:
                         raise WriteFieldError(
                             f"[{field_name}]: Failed to update current record {record_number} / {number_of_records} -- {e}"
                         )
         else:
             # Write to Specific Record Number
-            log.info(f"[{field_name}]: Updating single record {record_number}: '{value_to_write}'")
+            log.info(
+                f"[{field_name}]: Updating single record {record_number}: '{value_to_write}'"
+            )
             if not dry_run:
                 try:
-                    card._scc.update_record(ef, record_number, value_to_write, conserve=True)
+                    card._scc.update_record(
+                        ef, record_number, value_to_write, conserve=True
+                    )
                 except Exception as e:
                     raise WriteFieldError(
                         f"[{field_name}]: Failed to update single record {record_number} / {number_of_records} -- {e}"
@@ -429,14 +464,22 @@ def write_field_data(
                 raise WriteFieldError(f"[{field_name}]: Failed to update binary -- {e}")
 
             if sw != "9000":
-                raise WriteFieldError(f"[{field_name}]: Failed to update binary (Status {sw})")
+                raise WriteFieldError(
+                    f"[{field_name}]: Failed to update binary (Status {sw})"
+                )
 
     log.info(f"[{field_name}]: Finished Writing")
     return True
 
 
 def write_to_fieldname(
-    card: Card, field_name: str, value_to_write: str, *, dry_run=True, num_chars_to_display=50, report_differences=True
+    card: Card,
+    field_name: str,
+    value_to_write: str,
+    *,
+    dry_run=True,
+    num_chars_to_display=50,
+    report_differences=True,
 ) -> bool:
     """
     This is used in dataframe.apply function
@@ -456,8 +499,12 @@ def write_to_fieldname(
     read_value_before_write = read_field_data(card, field_name)
 
     show_ellipses = "..." if len(read_value_before_write) > num_chars_to_display else ""
-    log.info(f"[{field_name}]: {'Read Value':<12}: {read_value_before_write[:num_chars_to_display]}{show_ellipses}")
-    log.info(f"[{field_name}]: {'Write Value':<12}: {value_to_write[:num_chars_to_display]}{show_ellipses}")
+    log.info(
+        f"[{field_name}]: {'Read Value':<12}: {read_value_before_write[:num_chars_to_display]}{show_ellipses}"
+    )
+    log.info(
+        f"[{field_name}]: {'Write Value':<12}: {value_to_write[:num_chars_to_display]}{show_ellipses}"
+    )
 
     if value_to_write == read_value_before_write:
         # Don't Write if Current value on card == Value to Write, but return True immediately
@@ -465,7 +512,11 @@ def write_to_fieldname(
         return True
     elif report_differences:
         # Print the index where the differences begin
-        diff_indexes = [i for i in range(len(value_to_write)) if read_value_before_write[i] != value_to_write[i]]
+        diff_indexes = [
+            i
+            for i in range(len(value_to_write))
+            if read_value_before_write[i] != value_to_write[i]
+        ]
         diff_symbols = list(" " * num_chars_to_display)
         for i in diff_indexes:
             if i >= num_chars_to_display:
@@ -487,7 +538,9 @@ def write_to_fieldname(
                 f"[{field_name}]: Verification Error. Read Value After Write != Value to Write argument. '{read_value_before_write}' => '{read_value_after_write}'"
             )
         else:
-            log.info(f"[{field_name}]: write success '{read_value_before_write}' => '{read_value_after_write}'")
+            log.info(
+                f"[{field_name}]: write success '{read_value_before_write}' => '{read_value_after_write}'"
+            )
 
     return True
 
@@ -557,10 +610,7 @@ def get_args():
         default="auto",
     )
     parser.add_argument(
-        "--log-file",
-        type=str,
-        default="sim.log",
-        help="Specify log filename",
+        "--log-file", type=str, default="sim.log", help="Specify log filename",
     )
     parser.add_argument(
         "--multiple",
@@ -568,7 +618,13 @@ def get_args():
         help="If multiple, loop and wait for next card once done. Press Ctrl+C to stop",
     )
     write_group = parser.add_argument_group("write arguments")
-    write_group.add_argument("--write", dest="write", default=False, action="store_true", help="Turn on Write Mode.")
+    write_group.add_argument(
+        "--write",
+        dest="write",
+        default=False,
+        action="store_true",
+        help="Turn on Write Mode.",
+    )
     write_group.add_argument(
         "--pin-adm",
         dest="pin_adm",
@@ -616,7 +672,9 @@ def get_args():
         if args.pin_adm is None and args.pin_adm_json is None:
             parser.error("--write requires at least one: --pin-adm or --pin-adm-json")
         elif args.pin_adm is not None and args.pin_adm_json is not None:
-            parser.error("--pin-adm and pin-adm-json can't be selected at the same time")
+            parser.error(
+                "--pin-adm and pin-adm-json can't be selected at the same time"
+            )
 
     if args.multiple_new_args:
         if not args.multiple or not args.filter:
@@ -656,7 +714,9 @@ def main():
     log.info("Init card reader driver")
     sl = init_reader(args)
     if sl is None:
-        log.error("Failed to init card reader driver. Try unplugging and replugging in card reader.")
+        log.error(
+            "Failed to init card reader driver. Try unplugging and replugging in card reader."
+        )
         return 1
 
     # Create command layer
@@ -722,7 +782,9 @@ def main():
             filter_command = args.filter
 
             if args.multiple_new_args:
-                new_filter_args = input(f"Enter new filter args (if blank use {repr(args.filter[1:])}): ")
+                new_filter_args = input(
+                    f"Enter new filter args (if blank use {repr(args.filter[1:])}): "
+                )
                 if new_filter_args != "":
                     new_filter_args = shlex.split(new_filter_args)
                     filter_command = [args.filter[0], *new_filter_args]
@@ -754,7 +816,12 @@ def main():
         log.info("Checking that csv field values span full width of field")
 
         try:
-            df.apply(lambda row: verify_full_field_width(card, row["FieldName"], row["FieldValue"]), axis=1)
+            df.apply(
+                lambda row: verify_full_field_width(
+                    card, row["FieldName"], row["FieldValue"]
+                ),
+                axis=1,
+            )
         except Exception as e:
             log.error(f"({e.__class__.__name__}) {e}")
             return 1
@@ -767,7 +834,7 @@ def main():
                 if ask_write.lower() != "y":
                     log.info("You chose to not write.  Quitting")
                     return 0
-                    
+
             # Need ADM Key if Writing Values to Card
             if args.pin_adm is not None:
                 pin_adm = args.pin_adm
@@ -784,17 +851,23 @@ def main():
                 return 1
 
         #############################################################################
-        
+
         # For each FieldName, FieldValue pair, write the value
         df.apply(
             lambda row: write_to_fieldname(
-                card, row["FieldName"], row["FieldValue"], dry_run=not args.write, report_differences=args.show_diff
+                card,
+                row["FieldName"],
+                row["FieldValue"],
+                dry_run=not args.write,
+                report_differences=args.show_diff,
             ),
             axis=1,
         )
 
         if args.multiple:
-            log.info("Eject the sim card, and plug in another card. Press Ctrl+C to exit.\n")
+            log.info(
+                "Eject the sim card, and plug in another card. Press Ctrl+C to exit.\n"
+            )
         else:
             log.info("Done!")
             break
