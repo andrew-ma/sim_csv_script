@@ -595,6 +595,9 @@ def get_args():
     )
     parser = argparse_add_reader_args(parser)
 
+    # use PC/SC reader as default
+    parser.set_defaults(pcsc_dev=0)
+
     args = parser.parse_args()
 
     if args.write:
