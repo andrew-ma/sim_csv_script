@@ -171,6 +171,18 @@ def run_filter_command_on_csv_bytes(csv_bytes: bytes, filter_command: list) -> p
         return df
 
 
+def check_for_added_fields_after_filter(
+    previous_field_names: list[str], after_filter_field_names: list[str]
+):
+    # only can drop fields, not add new fields
+    if (len(after_filter_field_names) > len(previous_field_names)) or (
+        set(after_filter_field_names) - set(previous_field_names)
+    ):
+        raise FilterCSVError(
+            "Filter must not add new fields, only change values or remove fields."
+        )
+
+
 ############################################################################
 
 
@@ -719,8 +731,17 @@ def main():
 
             csv_bytes = open(args.CSV_FILE, "rb").read()
             try:
+                # Get Previous Keys
+                df = get_dataframe_from_csv(args.CSV_FILE)
+                previous_field_names = df["FieldName"].to_list()
+
                 df = run_filter_command_on_csv_bytes(csv_bytes, filter_command)
                 log.info(df)
+
+                after_filter_field_names = df["FieldName"].to_list()
+                check_for_added_fields_after_filter(
+                    previous_field_names, after_filter_field_names
+                )
                 check_that_fields_are_valid(df)
             except Exception as e:
                 log.error(f"({e.__class__.__name__}) {e}")
