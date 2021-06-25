@@ -15,9 +15,6 @@ If you get an error when installing requirements.txt, try installing swig, which
 ```
 # Linux
 sudo apt install swig
-
-# Windows
-choco install swig
 ```
 
 
