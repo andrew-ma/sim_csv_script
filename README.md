@@ -50,7 +50,8 @@ Example Read Multiple
 Example Write Multiple with Filter Script (with SAME filter script args for each new card)
 * You can create a Filter Script (doesn't have to be Python) that reads in a CSV file from STDIN, modifies it, and outputs a new CSV file to STDOUT
 * Filter Script must return 0 on Success
-* The --filter cli arg can accept more arguments that will be passed to the Filter Script as args
+* Arguments to filter script can be specified after script name, except when --multiple-filter-args is enabled
+* Do not specify filter args in --filter command when using the --multiple-filter-args option
 * Filter Script should be able to function as a standalone program `./filter_script.py < {example.csv} {arg1}`
 ```
 ./sim_csv_script.py {example.csv} --write --pin-adm-json {IMSI_TO_ADM.json} --multiple --filter {filter_script.py} {arg1} {arg2}

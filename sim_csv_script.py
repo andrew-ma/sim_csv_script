@@ -654,12 +654,12 @@ def get_args():
         "--filter",
         nargs="+",
         default=[],
-        help="Supply a script that receives the CSV file from STDIN, modifies it, and outputs the new CSV file to STDOUT.",
+        help="Supply a script that receives the CSV file from STDIN, modifies it, and outputs the new CSV file to STDOUT. Arguments to filter script can be specified after script name, except when --multiple-filter-args is enabled",
     )
     filter_group.add_argument(
-        "--multiple-new-args",
+        "--multiple-filter-args",
         action="store_true",
-        help="If both --multiple and --filter are set, and this is true, then it will prompt user for new filter args each round (won't replace the filter program, just the args)",
+        help="If both --multiple and --filter are set, and this is true, then prompt user for filter args for the current card. Do not specify filter args in --filter command when using this --multiple-filter-args option",
     )
     parser = argparse_add_reader_args(parser)
 
@@ -676,7 +676,7 @@ def get_args():
                 "--pin-adm and pin-adm-json can't be selected at the same time"
             )
 
-    if args.multiple_new_args:
+    if args.multiple_filter_args:
         if not args.multiple or not args.filter:
             parser.error("--multiple-new-args requires both --multiple and --filter")
 
@@ -781,13 +781,13 @@ def main():
         if args.filter:
             filter_command = args.filter
 
-            if args.multiple_new_args:
+            if args.multiple_filter_args:
                 new_filter_args = input(
-                    f"Enter new filter args (if blank use {repr(args.filter[1:])}): "
+                    f"Enter filter args (if blank use {repr(args.filter)}): "
                 )
                 if new_filter_args != "":
                     new_filter_args = shlex.split(new_filter_args)
-                    filter_command = [args.filter[0], *new_filter_args]
+                    filter_command = args.filter + new_filter_args
 
             log.info(f"Running Filter: {repr(filter_command)}")
 
