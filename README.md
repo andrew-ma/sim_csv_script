@@ -70,14 +70,14 @@ python3 sim_csv_script.py {example.csv} --write --pin-adm-json {IMSI_TO_ADM.json
    * Type `where python` to confirm that the Python you are using is in a "miniconda3" folder
    * In File Explorer, open the folder where you downloaded this repository, and copy and paste the path
    * Back in the "Anaconda Prompt (miniconda3)" terminal, run `cd {path to downloaded files}`
-   * Run `python -m pip install -r requirements.txt`
+   * Run `python -m pip install --no-cache-dir -r requirements.txt`
    * Script should be accessible with `python sim_csv_script.py -h`
 
 ## Linux Python Installation
 * Run `python3 --version` to check which version of Python is already installed.  Python 3.7+ should work
    * If not installed, run `sudo apt install python3`
 * In a terminal, run `cd {path to downloaded files}`
-* Run `python3 -m pip install -r requirements.txt`
+* Run `python3 -m pip install --no-cache-dir -r requirements.txt`
 * If you get an error when installing requirements.txt, try installing swig, which is a dependency of pyscard (dependency of pysim)
    * Run `sudo apt install swig`
    * Then rerun the pip install step again
