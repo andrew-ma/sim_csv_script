@@ -660,12 +660,12 @@ def get_args():
         "--filter",
         nargs="+",
         default=[],
-        help="Supply a script that receives the CSV file from STDIN, modifies it, and outputs the new CSV file to STDOUT. Arguments to filter script can be specified after script name, except when --multiple-filter-args is enabled",
+        help="Supply a command that receives the CSV file from STDIN, modifies it, and outputs the new CSV file to STDOUT.  Unchanging filter arguments can be supplied immediately after the command.  If different arguments are needed per card, then set --ask-filter-args and it will ask for new arguments that will be appended to this --filter command.",
     )
     filter_group.add_argument(
-        "--multiple-filter-args",
+        "--ask-filter-args",
         action="store_true",
-        help="If both --multiple and --filter are set, and this is true, then prompt user for filter args for the current card. Do not specify filter args in --filter command when using this --multiple-filter-args option",
+        help="Only works when --filter is set.  For each card, prompt user for arguments that will be appended to the --filter command.",
     )
     parser = argparse_add_reader_args(parser)
 
@@ -682,9 +682,9 @@ def get_args():
                 "--pin-adm and pin-adm-json can't be selected at the same time"
             )
 
-    if args.multiple_filter_args:
-        if not args.multiple or not args.filter:
-            parser.error("--multiple-new-args requires both --multiple and --filter")
+    if args.ask_filter_args:
+        if not args.filter:
+            parser.error("--ask-filter-args requires --filter")
 
     return args
 
@@ -787,7 +787,7 @@ def main():
         if args.filter:
             filter_command = args.filter
 
-            if args.multiple_filter_args:
+            if args.ask_filter_args:
                 new_filter_args = input(
                     f"Enter filter args (if blank use {repr(args.filter)}): "
                 )

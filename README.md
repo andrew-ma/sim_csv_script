@@ -12,51 +12,66 @@ Python pip Dependencies:
     * Right now it uses my fork, because of this commit (https://github.com/andrew-ma/pysim/commit/2f10406c9d3ba42787648fb0060475222531d905), and official repo doesn't accept pull requests on Github
 * pandas
 
+To install dependencies automatically
+```
+pip install git+https://github.com/andrew-ma/sim_csv_script@main
+```
+
 
 ## Usage Examples
-   If on Windows, replace `python3` with `python`
 
-Help and Documentation
+### Help and Documentation
 ```
-python3 sim_csv_script.py -h
-```
-
-Example Read Single
-```
-python3 ./sim_csv_script.py {example.csv}
+sim_csv_script -h
 ```
 
-Example Write Single (reading ADM pin from CLI arg)
+### Example Read Single
+```
+sim_csv_script {example.csv}
+```
+
+### Example Write Single (reading ADM pin from CLI arg)
 * Specify ASCII ADM pin without the leading "0x"
 ```
-python3 sim_csv_script.py {example.csv} --write --pin-adm 0x8888888888888888
+sim_csv_script {example.csv} --write --pin-adm 0x8888888888888888
 ```
 
-Example Write Single (reading hexadecimal ADM pin from JSON file with {"IMSI key" : "ADM pin value"})
+### Example Write Single (reading hexadecimal ADM pin from JSON file with {"IMSI key" : "ADM pin value"})
 * Specify ASCII ADM pins without the leading "0x"
 ```
-python3 sim_csv_script.py {example.csv} --write --pin-adm-json {IMSI_TO_ADM.json}
+sim_csv_script {example.csv} --write --pin-adm-json {IMSI_TO_ADM.json}
 ```
 
-Example Read Multiple
+### Example Read Multiple
 ```
-python3 sim_csv_script.py {example.csv} --multiple
-```
-
-Example Write Multiple with Filter Script (with SAME filter script args for each new card)
-* You can create a Filter Script (doesn't have to be Python) that reads in a CSV file from STDIN, modifies it, and outputs a new CSV file to STDOUT
-* Filter Script must return 0 on Success
-* Arguments to filter script can be specified after script name, except when --multiple-filter-args is enabled
-* Do not specify filter args in --filter command when using the --multiple-filter-args option
-* Filter Script should be able to function as a standalone program `python3 filter_script.py < {example.csv} {arg1}`
-   * In Windows, running this in Powershell will cause an error, so run this in Command Prompt
-```
-python3 sim_csv_script.py {example.csv} --write --pin-adm-json {IMSI_TO_ADM.json} --multiple --filter {python3 filter_script.py arg1}
+sim_csv_script {example.csv} --multiple
 ```
 
-Example Write Multiple with Filter Script (with DIFFERENT filter script args for each new card)
+---
+
+### **Filters**
+>  On Windows, replace `python3` with `python`
+* You can create a filter script (doesn't have to be Python) that reads in a CSV file from STDIN, modifies it, and outputs a new CSV file to STDOUT
+
+* The filter script should be able to function as a standalone program "`python3 filter_script.py unchanging_arg_1} < {example.csv}`"
+   * In Windows, running this in Powershell will cause an error because Powershell doesn't have the '<' STDIN redirect operator, so run this in Command Prompt
+
+* Filter script must return 0 on Success.  It should also raise Exceptions if it requires certain arguments.
+
+* Supply a valid command (that can run in the terminal) to --filter, like "`--filter ./filter_script.py`" or "`--filter python3 ./filter_script.py`" on Linux, or "`--filter python .filter_script.py`" on Windows
+* Unchanging arguments can be specified immediately after the command.
+* If different arguments need to be specified for each card, then we can set --ask-filter-args, which will ask user to type new arguments that will be appended to --filter command. 
+
+
+### Example Read Multiple with --filter
+>  On Windows, replace `python3` with `python`
 ```
-python3 sim_csv_script.py {example.csv} --write --pin-adm-json {IMSI_TO_ADM.json} --multiple --filter {python3 filter_script.py} --multiple-new-args
+sim_csv_script {example.csv} --multiple --filter {python3 filter_script.py unchanging_arg1}
+```
+
+### Example Read Multiple with --filter and --ask-filter-args
+```
+sim_csv_script {example.csv} --multiple --filter {python3 filter_script.py} --ask-filter-args
 ```
 
 ---
@@ -67,17 +82,12 @@ python3 sim_csv_script.py {example.csv} --write --pin-adm-json {IMSI_TO_ADM.json
    * Run the downloaded Miniconda exe file, and accept all the defaults
    * Once installed, search in your windows start menu (press Windows Button + S) for "miniconda".
    * Click on the item named "Anaconda Prompt (miniconda3)"
-   * Type `where python` to confirm that the Python you are using is in a "miniconda3" folder
-   * In File Explorer, open the folder where you downloaded this repository, and copy and paste the path
-   * Back in the "Anaconda Prompt (miniconda3)" terminal, run `cd {path to downloaded files}`
-   * Run `python -m pip install --no-cache-dir -r requirements.txt`
-   * Script should be accessible with `python sim_csv_script.py -h`
+   * Type "`where python`" to confirm that the Python you are using is in a "miniconda3" folder
+   * Run the above "pip install ..." command
 
 ## Linux Python Installation
-* Run `python3 --version` to check which version of Python is already installed.  Python 3.7+ should work
-   * If not installed, run `sudo apt install python3`
-* In a terminal, run `cd {path to downloaded files}`
-* Run `python3 -m pip install --no-cache-dir -r requirements.txt`
-* If you get an error when installing requirements.txt, try installing swig, which is a dependency of pyscard (dependency of pysim)
-   * Run `sudo apt install swig`
-   * Then rerun the pip install step again
+* Run "`python3 --version`" to check which version of Python is already installed.  Python 3.7+ should work
+   * If not installed, run "`sudo apt install python3`"
+* If you get an error when running the above "pip install ..." command, try installing swig, which is a dependency of pyscard (dependency of pysim)
+   * Run "`sudo apt install swig`"
+   * Then rerun the above "pip install ..." command again
