@@ -2,3 +2,5 @@ Pipfile*
 __pycache__/
 *.log
 .vscode/
+build/
+*.egg-info/

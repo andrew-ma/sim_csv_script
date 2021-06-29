@@ -11,7 +11,7 @@ Return 1 if error
 import sys
 import logging
 from io import StringIO
-from csv_utils import get_dataframe_from_csv
+from sim_csv_script.csv_utils import get_dataframe_from_csv
 
 LOG_FORMAT = "[%(levelname)s] %(message)s"
 log = logging.getLogger("filter_script")

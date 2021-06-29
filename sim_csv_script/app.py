@@ -20,7 +20,7 @@ from pySim.cards import card_detect, _cards_classes, Card, UsimCard, IsimCard
 from pySim.utils import h2b
 from pySim.utils import sanitize_pin_adm
 
-from csv_utils import get_dataframe_from_csv
+from sim_csv_script.csv_utils import get_dataframe_from_csv
 
 ALL_FieldName_to_EF = {**EF_ISIM_ADF_map, **EF_USIM_ADF_map, **EF}
 
@@ -29,7 +29,9 @@ FIELDS_THAT_USE_RECORDS = ("SMSP", "PCSCF", "IMPU")
 LOG_FORMAT = "[%(levelname)s] %(message)s"
 
 logging.basicConfig(
-    level=logging.INFO, format=LOG_FORMAT, handlers=[logging.StreamHandler()],
+    level=logging.INFO,
+    format=LOG_FORMAT,
+    handlers=[logging.StreamHandler()],
 )
 log = logging.getLogger(__name__)
 
@@ -611,7 +613,10 @@ def get_args():
         default="auto",
     )
     parser.add_argument(
-        "--log-file", type=str, default="sim.log", help="Specify log filename",
+        "--log-file",
+        type=str,
+        default="sim.log",
+        help="Specify log filename",
     )
     parser.add_argument(
         "--show-diff",
@@ -876,9 +881,13 @@ def main():
     return 0
 
 
-if __name__ == "__main__":
+def main_safe():
     try:
         sys.exit(main())
     except Exception as e:
         log.exception(e)
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    main_safe()
