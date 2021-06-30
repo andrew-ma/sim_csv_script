@@ -16,7 +16,7 @@ from pySim.ts_31_103 import EF_ISIM_ADF_map
 
 from pySim.commands import SimCardCommands
 from pySim.transport import init_reader, argparse_add_reader_args
-from pySim.cards import card_detect, _cards_classes, Card, UsimCard, IsimCard
+from pySim.cards import card_detect, _cards_classes, SimCard, UsimCard, IsimCard
 from pySim.utils import h2b
 from pySim.utils import sanitize_pin_adm
 
@@ -193,7 +193,7 @@ def check_for_added_fields_after_filter(
 ############################################################################
 
 
-def check_isim_field(card: Card, field_name: str) -> None:
+def check_isim_field(card: SimCard, field_name: str) -> None:
     """
     Checks if field_name is an Isim field
     if so, then ensure that card object inherits from IsimCard
@@ -202,7 +202,7 @@ def check_isim_field(card: Card, field_name: str) -> None:
     """
     if field_name in EF_ISIM_ADF_map:
         # ensure that card is of Isimcard type
-        assert isinstance(card, IsimCard), f"[{field_name}]: Card is not ISIM"
+        assert isinstance(card, IsimCard), f"[{field_name}]: SimCard is not ISIM"
 
         try:
             _, sw = card.select_adf_by_aid(adf="isim")
@@ -221,7 +221,7 @@ def check_isim_field(card: Card, field_name: str) -> None:
     return None
 
 
-def check_usim_field(card: Card, field_name: str) -> None:
+def check_usim_field(card: SimCard, field_name: str) -> None:
     """
     Checks if field_name is an Usim field
     if so, then ensure that card object inherits from UsimCard
@@ -230,7 +230,7 @@ def check_usim_field(card: Card, field_name: str) -> None:
     """
     if field_name in EF_USIM_ADF_map:
         # ensure that card is of UsimCard type
-        assert isinstance(card, UsimCard), f"[{field_name}]: Card is not Usim"
+        assert isinstance(card, UsimCard), f"[{field_name}]: SimCard is not Usim"
 
         try:
             _, sw = card.select_adf_by_aid(adf="usim")
@@ -248,10 +248,10 @@ def check_usim_field(card: Card, field_name: str) -> None:
     return None
 
 
-def verify_full_field_width(card: Card, field_name: str, field_value: HexStr):
+def verify_full_field_width(card: SimCard, field_name: str, field_value: HexStr):
     """Used in dataframe.apply function
 
-    ValueError: if hexStr argument's length of bytes != Card read field width
+    ValueError: if hexStr argument's length of bytes != SimCard read field width
 
     Return Values don't really matter, since the main goal is to raise Error
         Return True if can read binary size of field, and the binary size matches the hexStr's length of bytes
@@ -283,7 +283,7 @@ def verify_full_field_width(card: Card, field_name: str, field_value: HexStr):
 ############################################################################
 
 
-def check_pin_adm(card: Card, pin_adm: Union[str, HexStr]) -> None:
+def check_pin_adm(card: SimCard, pin_adm: Union[str, HexStr]) -> None:
     """
     Enter ADM pin, and it will be treated as hex if it starts with "0x",
     otherwise it will be treated as ASCII
@@ -305,7 +305,7 @@ def check_pin_adm(card: Card, pin_adm: Union[str, HexStr]) -> None:
 
 
 def read_field_data(
-    card: Card, field_name: str, *, record_number: Optional[int] = None
+    card: SimCard, field_name: str, *, record_number: Optional[int] = None
 ) -> str:
     """
     ReadFieldError: if problems reading record (for fields with records), or data (for normal fields)
@@ -370,7 +370,7 @@ def read_field_data(
 
 
 def write_field_data(
-    card: Card,
+    card: SimCard,
     field_name: str,
     value_to_write: HexStr,
     *,
@@ -476,7 +476,7 @@ def write_field_data(
 
 
 def write_to_fieldname(
-    card: Card,
+    card: SimCard,
     field_name: str,
     value_to_write: str,
     *,
@@ -609,7 +609,7 @@ def get_args():
     parser.add_argument(
         "--type",
         dest="card_type",
-        help="Card type (use '--type list' to view)",
+        help="SimCard type (use '--type list' to view)",
         default="auto",
     )
     parser.add_argument(
@@ -841,7 +841,7 @@ def main():
                     log.info("You chose to not write.  Quitting")
                     return 0
 
-            # Need ADM Key if Writing Values to Card
+            # Need ADM Key if Writing Values to SimCard
             if args.pin_adm is not None:
                 pin_adm = args.pin_adm
             elif args.pin_adm_json is not None:
