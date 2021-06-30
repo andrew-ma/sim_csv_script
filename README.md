@@ -12,9 +12,14 @@ Python pip Dependencies:
     * Right now it uses my fork, because of this commit (https://github.com/andrew-ma/pysim/commit/2f10406c9d3ba42787648fb0060475222531d905), and official repo doesn't accept pull requests on Github
 * pandas
 
-To install dependencies automatically
+To install automatically
 ```
 pip install git+https://github.com/andrew-ma/sim_csv_script@main
+```
+
+To uninstall
+```
+pip uninstall sim_csv_script
 ```
 
 
