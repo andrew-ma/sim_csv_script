@@ -100,7 +100,7 @@ sim_csv_gui
 ```
 
 ### __GUI Development__
-First Install Gui Development Dependencies
+To install Qt Designer
 ```
 pip install -r requirements_gui_dev.txt
 ```
