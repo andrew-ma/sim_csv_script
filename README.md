@@ -14,7 +14,7 @@ Python pip Dependencies:
 
 To install for use
 ```
-pip install https://github.com/andrew-ma/sim_csv_script/archive/main.zip --upgrade
+pip install https://github.com/andrew-ma/sim_csv_script/archive/main.zip --upgrade --no-cache-dir
 ```
 
 
