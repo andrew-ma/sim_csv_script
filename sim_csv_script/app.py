@@ -558,7 +558,7 @@ def FileArgType(filename):
     Checks that file exists
     """
     if not os.path.exists(filename):
-        raise argparse.ArgumentTypeError(f"CSV file '{filename}' does not exist")
+        raise argparse.ArgumentTypeError(f"File '{filename}' does not exist")
     return filename
 
 
