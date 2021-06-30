@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="/images">
+    <file alias="insert_credit_card">images/insert_credit_card.jpg</file>
+  </qresource>
+</RCC>
