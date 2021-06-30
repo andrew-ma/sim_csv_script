@@ -28,6 +28,11 @@ pip install -e .
 To uninstall
 ```
 pip uninstall sim_csv_script -y
+```
+
+To uninstall dependencies (Optional)
+> First download this repo and cd into the folder where the requirements*.txt files are
+```
 pip uninstall -r requirements.txt -y
 pip uninstall -r requirements_gui.txt -y
 pip uninstall -r requirements_gui_dev.txt -y
