@@ -3,7 +3,7 @@ Python script to read and write SIM cards.
 Fields and values are specified in a CSV file, and optionally a filter script can be supplied as a command line argument for dynamically changing the CSV contents for each card.
 
 ## System Requirements
-* Python 3.7 or later ([Python Installation Steps](python-installation.md))
+* Python 3.7 or later ([Python Installation Steps](python_installation_steps.md))
 
 ## Python Package Dependencies:
 * pysim
