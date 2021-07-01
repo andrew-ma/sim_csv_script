@@ -10,7 +10,7 @@
 * PyQt5
 * pyqt5-tools
 
-## Development Installation
+## Install for Development
 ```
 git clone -b main https://github.com/andrew-ma/sim_csv_script
 cd sim_csv_script
