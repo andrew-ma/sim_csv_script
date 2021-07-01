@@ -15,6 +15,8 @@ Fields and values are specified in a CSV file, and optionally a filter script ca
 ```
 pip install https://github.com/andrew-ma/sim_csv_script/archive/main.zip --upgrade --no-cache-dir
 ```
+> _Linux_: if you get a "swig: not found" error while running the installation command, first ensure that Python 3.7 or later is installed ('`python3 --version`').  If so, install swig with '`sudo apt install swig`' and retry the installation command.
+
 
 ## Uninstall
 ```
