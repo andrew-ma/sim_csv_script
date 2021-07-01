@@ -5,7 +5,7 @@ Fields and values are specified in a CSV file, and optionally a filter script ca
 ## Installation
 * Requires Python 3 (version 3.7+)
 * On Windows, recommended Python installation method is with Miniconda https://docs.conda.io/en/latest/miniconda.html).
-* Look at Python Installation sections below.
+* Look at [Python Installation](#windows-python-installation) sections below.
 
 Python pip Dependencies:
 * pysim
