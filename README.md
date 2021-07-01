@@ -83,6 +83,7 @@ sim_csv_script {example.csv} --multiple --filter {python3 filter_script.py} --as
 ---
 ## __Graphical User Interface__
 
+Launch GUI
 ```
 sim_csv_gui
 ```
