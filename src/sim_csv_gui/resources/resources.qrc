@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/images">
-    <file alias="insert_credit_card">images/insert_credit_card.jpg</file>
+    <file alias="mainwindow_icon">images/icons8-sim-card-40.png</file>
+    <file alias="insert_card">images/insert_credit_card.jpg</file>
   </qresource>
 </RCC>
