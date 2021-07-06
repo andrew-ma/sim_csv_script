@@ -28,11 +28,6 @@ FIELDS_THAT_USE_RECORDS = ("SMSP", "PCSCF", "IMPU")
 
 LOG_FORMAT = "[%(levelname)s] %(message)s"
 
-logging.basicConfig(
-    level=logging.INFO,
-    format=LOG_FORMAT,
-    handlers=[logging.StreamHandler()],
-)
 log = logging.getLogger(__name__)
 
 HexStr = str
@@ -475,6 +470,15 @@ def write_field_data(
     return True
 
 
+def read_fieldname(
+    card: SimCard,
+    field_name: str,
+) -> str:
+    check_isim_field(card, field_name)
+    check_usim_field(card, field_name)
+    read_value_before_write = read_field_data(card, field_name)
+
+
 def write_to_fieldname(
     card: SimCard,
     field_name: str,
@@ -549,6 +553,14 @@ def write_to_fieldname(
 
 
 ############################################################################
+
+
+def setup_logging_basic_config():
+    logging.basicConfig(
+        level=logging.INFO,
+        format=LOG_FORMAT,
+        handlers=[logging.StreamHandler()],
+    )
 
 
 def FileArgType(filename):
@@ -690,9 +702,110 @@ def get_args():
 
 
 ############################################################################
+# GUI requires Inputs:
+
+# Data CSV file: str
+
+# ADM pin: str or ADM pin file : str
+
+# Filter command : str
+
+# Easy access to Read function and Write function when Button pressed
+
+
+# When enabled is check, it refilters the dataframe using the filter command
+# If there are any errors, it will show a
+############################################################################
+
+
+def initialize_card_reader_and_commands(reader_args):
+    # Init card reader driver
+    log.info("Init card reader driver")
+    sl = init_reader(reader_args)
+    if sl is None:
+        raise Exception(
+            "Failed to init card reader driver. Try unplugging and replugging in card reader."
+        )
+
+    # Create command layer
+    log.info("Setting up SimCardCommands")
+    scc = SimCardCommands(transport=sl)
+    return (sl, scc)
+
+
+def set_commands_cla_byte_and_sel_ctrl(scc, sl):
+    # Assuming UICC SIM
+    scc.cla_byte = "00"
+    scc.sel_ctrl = "0004"
+
+    # Testing for Classic SIM or UICC
+    log.info("Testing for Classic SIM or UICC")
+    (res, sw) = sl.send_apdu(scc.cla_byte + "a4" + scc.sel_ctrl + "02" + "3f00")
+    if sw == "6e00":
+        log.info("Just a Classic SIM")
+        # Just a Classic SIM
+        scc.cla_byte = "a0"
+        scc.sel_ctrl = "0000"
+    else:
+        log.info("Is a UICC")
+
+
+def get_card(card_type, scc):
+    log.info("Autodetecting card type")
+    try:
+        card = card_detect(card_type, scc)
+    except Exception as e:
+        log.error(f"({e.__class__.__name__}) {e}")
+        return 1
+
+    if card is None:
+        # If can't autodetect card, then use UsimandIsimCard
+        log.info("Can't autodetect card.  Using default card: UsimAndIsimCard")
+        card = UsimAndIsimCard(scc)
+
+    return card
+
+
+def read_card_initial_data(card):
+    # Read all AIDs on the UICC
+    log.info("Reading card AIDs")
+    card.read_aids()
+
+    # EF.ICCID
+    (iccid, sw) = card.read_iccid()
+    if sw == "9000":
+        log.info(f"[ICCID]: {res}")
+    else:
+        log.info(f"[ICCID]: Can't read, response code = {sw}")
+
+    # EF.IMSI
+    (imsi, sw) = card.read_imsi()
+    if sw == "9000":
+        log.info(f"[IMSI]:  {imsi}")
+    else:
+        log.info(f"[IMSI]: Can't read, response code {sw}")
+
+    return iccid, imsi
+
+
+def get_filtered_dataframe(csv_filename, filter_command):
+    csv_bytes = open(csv_filename, "rb").read()
+    # Get Previous Keys
+    df = get_dataframe_from_csv(csv_filename)
+    previous_field_names = df["FieldName"].to_list()
+
+    df = run_filter_command_on_csv_bytes(csv_bytes, filter_command)
+    log.info(df)
+
+    after_filter_field_names = df["FieldName"].to_list()
+    check_for_added_fields_after_filter(previous_field_names, after_filter_field_names)
+    check_that_fields_are_valid(df)
+
+    return df
 
 
 def main():
+    setup_logging_basic_config()
     args = get_args()
 
     file_handler = logging.FileHandler(args.log_file)
@@ -716,70 +829,22 @@ def main():
             return 1
     ############################################################################
 
-    # Init card reader driver
-    log.info("Init card reader driver")
-    sl = init_reader(args)
-    if sl is None:
-        log.error(
-            "Failed to init card reader driver. Try unplugging and replugging in card reader."
-        )
+    try:
+        sl, scc = initialize_card_reader_and_commands(args)
+    except Exception as e:
+        log.error(f"({e.__class__.__name__}) {e}")
         return 1
-
-    # Create command layer
-    log.info("Setting up SimCardCommands")
-    scc = SimCardCommands(transport=sl)
 
     while True:
         # Wait for SIM card
         log.info("Waiting for new SIM card...")
         sl.wait_for_card(newcardonly=True)
 
-        # Assuming UICC SIM
-        scc.cla_byte = "00"
-        scc.sel_ctrl = "0004"
+        set_commands_cla_byte_and_sel_ctrl(scc, sl)
 
-        # Testing for Classic SIM or UICC
-        log.info("Testing for Classic SIM or UICC")
-        (res, sw) = sl.send_apdu(scc.cla_byte + "a4" + scc.sel_ctrl + "02" + "3f00")
-        if sw == "6e00":
-            log.info("Just a Classic SIM")
-            # Just a Classic SIM
-            scc.cla_byte = "a0"
-            scc.sel_ctrl = "0000"
-        else:
-            log.info("Is a UICC")
+        card = get_card(args.card_type, scc)
 
-        log.info("Autodetecting card type")
-        try:
-            card = card_detect(args.card_type, scc)
-        except Exception as e:
-            log.error(f"({e.__class__.__name__}) {e}")
-            return 1
-
-        if card is None:
-            # If can't autodetect card, then use UsimandIsimCard
-            log.info("Can't autodetect card.  Using default card: UsimAndIsimCard")
-            card = UsimAndIsimCard(scc)
-
-        ############################################################################
-
-        # Read all AIDs on the UICC
-        log.info("Reading card AIDs")
-        card.read_aids()
-
-        # EF.ICCID
-        (res, sw) = card.read_iccid()
-        if sw == "9000":
-            log.info(f"[ICCID]: {res}")
-        else:
-            log.info(f"[ICCID]: Can't read, response code = {sw}")
-
-        # EF.IMSI
-        (imsi, sw) = card.read_imsi()
-        if sw == "9000":
-            log.info(f"[IMSI]:  {imsi}")
-        else:
-            log.info(f"[IMSI]: Can't read, response code {sw}")
+        _, imsi = read_card_initial_data(card)
 
         ############################################################################
         # We Can Modify The Field Values Dynamically Using A filter Script
@@ -797,20 +862,8 @@ def main():
 
             log.info(f"Running Filter: {repr(filter_command)}")
 
-            csv_bytes = open(args.CSV_FILE, "rb").read()
             try:
-                # Get Previous Keys
-                df = get_dataframe_from_csv(args.CSV_FILE)
-                previous_field_names = df["FieldName"].to_list()
-
-                df = run_filter_command_on_csv_bytes(csv_bytes, filter_command)
-                log.info(df)
-
-                after_filter_field_names = df["FieldName"].to_list()
-                check_for_added_fields_after_filter(
-                    previous_field_names, after_filter_field_names
-                )
-                check_that_fields_are_valid(df)
+                df = get_filtered_dataframe(args.CSV_FILE, filter_command)
             except Exception as e:
                 log.error(f"({e.__class__.__name__}) {e}")
                 return 1
