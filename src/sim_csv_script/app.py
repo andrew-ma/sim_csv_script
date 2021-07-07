@@ -477,6 +477,7 @@ def read_fieldname(
     check_isim_field(card, field_name)
     check_usim_field(card, field_name)
     read_value_before_write = read_field_data(card, field_name)
+    return read_value_before_write
 
 
 def write_to_fieldname(
@@ -774,7 +775,7 @@ def read_card_initial_data(card):
     # EF.ICCID
     (iccid, sw) = card.read_iccid()
     if sw == "9000":
-        log.info(f"[ICCID]: {res}")
+        log.info(f"[ICCID]: {iccid}")
     else:
         log.info(f"[ICCID]: Can't read, response code = {sw}")
 
