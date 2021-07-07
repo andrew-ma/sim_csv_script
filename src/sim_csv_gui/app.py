@@ -11,7 +11,18 @@ from PyQt5.QtWidgets import (
     QFileDialog,
     QMessageBox,
 )
-from PyQt5.QtCore import QDir, QRegExp, QVariant, Qt, QModelIndex, QAbstractTableModel
+from PyQt5.QtCore import (
+    QDir,
+    QMutex,
+    QRegExp,
+    QVariant,
+    Qt,
+    QModelIndex,
+    QAbstractTableModel,
+    QObject,
+    QThread,
+    pyqtSignal,
+)
 from PyQt5 import QtGui
 
 
@@ -31,7 +42,7 @@ from sim_csv_script.app import (
     read_card_initial_data,
     verify_full_field_width,
     write_to_fieldname,
-    read_fieldname
+    read_fieldname,
 )
 
 
@@ -97,6 +108,91 @@ class DataframeTableModel(QAbstractTableModel):
         self.beginResetModel()
         self.dataframe = pd.DataFrame()
         self.endResetModel()
+
+
+class WaitForSIMCardWorker(QObject):
+    finished = pyqtSignal()
+    progress = pyqtSignal(int)
+
+    def __init__(self, sl, parent=None):
+        super(WaitForSIMCardWorker, self).__init__()
+        self.sl = sl
+        self._mutex = QMutex()
+        self._running = True
+
+    def running(self):
+        # If variable is currently being modified, then it will be locked
+        # we try to lock it, and if it is currently locked, this call will block until it is unlocked (and can be changed)
+
+        self._mutex.lock()
+        running = self._running
+        self._mutex.unlock()
+        return running
+
+    def run(self):
+        while self.running():
+            try:
+                # Every 2 seconds, stop to check if we are still running
+                self.sl.wait_for_card(timeout=2, newcardonly=True)
+            except Exception as e:
+                pass
+            else:
+                # If no exception, stop running
+                self._mutex.lock()
+                self._running = False
+                self._mutex.unlock()
+
+        self.finished.emit()
+
+    def stop(self):
+        self._mutex.lock()
+        self._running = False
+        self._mutex.unlock()
+
+
+class ReadCardWorker(QObject):
+    finished = pyqtSignal()
+    progress = pyqtSignal(int)
+
+    def __init__(self, scc, sl, parent=None):
+        super(ReadCardWorker, self).__init__()
+        self.scc = scc
+        self.sl = sl
+
+    def run(self):
+        set_commands_cla_byte_and_sel_ctrl(self.scc, self.sl)
+
+        card = get_card("auto", self.scc)
+
+        _, imsi = read_card_initial_data(card)
+
+        # Checking that FieldValue's length in bytes matches binary size of field (since we want to completely overwrite each field)
+        # if we can read the binary size, but it doesn't match FieldValue's length in bytes, then it will raise a ValueError
+        # and we alert user to fix the input file
+        log.info("Checking that csv field values span full width of field")
+
+        df.apply(
+            lambda row: verify_full_field_width(
+                card, row["FieldName"], row["FieldValue"]
+            ),
+            axis=1,
+        )
+
+        # For each FieldName, FieldValue pair, write the value
+        df["Value On Card"] = df.apply(
+            lambda row: read_fieldname(
+                card,
+                row["FieldName"],
+            ),
+            axis=1,
+        )
+
+        differences = df["FieldValue"] != df["Value On Card"]
+        df["Differences"] = differences.apply(lambda b: "X" if b else "")
+
+        self.update_table(df)
+
+        self.finished.emit()
 
 
 class SIM_CSV_GUI:
@@ -202,6 +298,54 @@ class SIM_CSV_GUI:
         log.info(f"My Filter: {repr(filter_command)}")
         return filter_command
 
+    def runWaitForSIMCardWorker(self, sl):
+        # create a QThread object
+        self.wait_for_sim_card_thread = QThread()
+
+        # create a worker object
+        self.wait_for_sim_card_worker = WaitForSIMCardWorker(sl)
+
+        # Move worker to the thread
+        self.wait_for_sim_card_worker.moveToThread(self.wait_for_sim_card_thread)
+
+        # Connect signals and slots
+        # When thread 'started', run slot 'worker.run'
+        self.wait_for_sim_card_thread.started.connect(self.wait_for_sim_card_worker.run)
+
+        def worker_finished():
+            log.info("Worker has finished")
+            self.wait_for_sim_card_worker.deleteLater()
+            self.wait_for_sim_card_thread.quit()
+
+        self.wait_for_sim_card_worker.finished.connect(worker_finished)
+
+        def thread_finished():
+            log.info("Thread has finished")
+            self.wait_for_sim_card_thread.deleteLater()
+            log.info("Enabling Buttons")
+            self.ui.readButton.setDisabled(False)
+            self.ui.writeButton.setDisabled(False)
+            self.close_message_box()
+
+        self.wait_for_sim_card_thread.finished.connect(thread_finished)
+
+        ########################################################
+        # Disable the Read Button
+        self.ui.readButton.setDisabled(True)
+        # Disable the Write Button
+        self.ui.writeButton.setDisabled(True)
+
+        # Start the Thread
+        self.wait_for_sim_card_thread.start()
+
+    def close_message_box(self):
+        # Close Message Box
+        self.msg_box.accept()
+
+    def runReadCardWorker(self):
+        # create a QThread object
+        self.thread = QThread()
+
     def read_mode(self):
         try:
             log.debug("read_mode()")
@@ -213,7 +357,6 @@ class SIM_CSV_GUI:
             if self.ui.filterCheckbox.isChecked():
                 filter_command = self.get_filter_command()
                 df = get_filtered_dataframe(self.selected_CSV_filename, filter_command)
-
             else:
                 # NO FILTER
                 df = get_dataframe_from_csv(self.selected_CSV_filename)
@@ -221,41 +364,20 @@ class SIM_CSV_GUI:
 
             self.update_table(df)
 
+            ###############################################
             # Card Reader Stuff
             reader_args = get_reader_args()
+            log.info("Initializing Card Reader and Commands")
             sl, scc = initialize_card_reader_and_commands(reader_args)
 
-            sl.wait_for_card(newcardonly=True)
+            # Wait for SIM card to be inserted in Separate Thread
+            self.runWaitForSIMCardWorker(sl)
 
-            set_commands_cla_byte_and_sel_ctrl(scc, sl)
-
-            card = get_card("auto", scc)
-
-            _, imsi = read_card_initial_data(card)
-
-            # Checking that FieldValue's length in bytes matches binary size of field (since we want to completely overwrite each field)
-            # if we can read the binary size, but it doesn't match FieldValue's length in bytes, then it will raise a ValueError
-            # and we alert user to fix the input file
-            log.info("Checking that csv field values span full width of field")
-
-            df.apply(
-                lambda row: verify_full_field_width(
-                    card, row["FieldName"], row["FieldValue"]
-                ),
-                axis=1,
-            )
-
-            # For each FieldName, FieldValue pair, write the value
-            df["Read Value On Card"] = df.apply(
-                lambda row: read_fieldname(
-                    card,
-                    row["FieldName"],
-                ),
-                axis=1,
-            )
-            print(df)
-
-
+            ret = self.openMessageBox("Insert SIM card...", buttons=QMessageBox.Cancel)
+            # buttons=QMessageBox.NoButton, buttons=QMessageBox.Cancel
+            if ret == QMessageBox.Cancel:
+                self.wait_for_sim_card_worker.stop()
+            #     self.wait_for_sim_card_worker.finished.emit(1)
 
         except Exception as e:
             log.error(e)
@@ -336,8 +458,10 @@ class SIM_CSV_GUI:
                 self.selected_CSV_filename = None
 
                 # Remove table from view
-                self.table_model.clear()
-                self.table_model = None
+                if self.table_model:
+                    self.table_model.clear()
+                else:
+                    self.table_model = None
 
                 log.error(e)
                 self.openErrorDialog(e.__class__.__name__, str(e))
@@ -408,6 +532,11 @@ class SIM_CSV_GUI:
             self.look_disabled(self.ui.filterCheckbox)
             self.ui.filterApplyButton.setEnabled(False)
 
+            # return the Table to unfiltered form
+            if self.selected_CSV_filename:
+                df = get_dataframe_from_csv(self.selected_CSV_filename)
+                self.update_table(df)
+
     def on_filterApplyButton_clicked(self):
         log.debug("on_filterApplyButton_clicked()")
 
@@ -455,17 +584,20 @@ class SIM_CSV_GUI:
         informative_text=None,
         window_title=None,
         icon=QMessageBox.Information,
+        buttons=None,
     ):
-        msg = QMessageBox()
-        msg.setIcon(icon)
-        msg.setText(text)
+        self.msg_box = QMessageBox()
+        self.msg_box.setIcon(icon)
+        self.msg_box.setText(text)
+        if buttons is not None:
+            self.msg_box.setStandardButtons(buttons)
         if informative_text is not None:
-            msg.setInformativeText(informative_text)
+            self.msg_box.setInformativeText(informative_text)
         if window_title is not None:
-            msg.setWindowTitle(window_title)
+            self.msg_box.setWindowTitle(window_title)
         else:
-            msg.setWindowTitle(self.window_title)
-        msg.exec_()
+            self.msg_box.setWindowTitle(self.window_title)
+        return self.msg_box.exec_()
 
     def openErrorDialog(self, text, informative_text=None):
         self.openMessageBox(text, informative_text, icon=QMessageBox.Critical)
@@ -480,6 +612,18 @@ class SIM_CSV_GUI:
         palette.setCurrentColorGroup(QtGui.QPalette.Disabled)
         palette.setColorGroup(
             QtGui.QPalette.Normal,
+            palette.windowText(),
+            palette.button(),
+            palette.light(),
+            palette.dark(),
+            palette.mid(),
+            palette.text(),
+            palette.brightText(),
+            palette.base(),
+            palette.window(),
+        )
+        palette.setColorGroup(
+            QtGui.QPalette.Inactive,
             palette.windowText(),
             palette.button(),
             palette.light(),
