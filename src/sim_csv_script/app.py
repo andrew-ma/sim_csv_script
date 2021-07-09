@@ -470,17 +470,50 @@ def write_field_data(
     return True
 
 
-def read_fieldname(
+def read_fieldname_simple(
     card: SimCard,
     field_name: str,
 ) -> str:
+    """This is used in dataframe.apply function to read and return Card's value for field_name"""
     check_isim_field(card, field_name)
     check_usim_field(card, field_name)
     read_value_before_write = read_field_data(card, field_name)
     return read_value_before_write
 
 
-def write_to_fieldname(
+def write_fieldname_simple(
+    card: SimCard,
+    field_name: str,
+    field_value: str,
+    pin_adm: str,
+    *,
+    dry_run: bool = True,
+) -> str:
+    """This is used in dataframe.apply function to write and return Card's value for field_name"""
+    log.info(f"Writing fieldname simpmle with pin: {pin_adm}")
+    check_isim_field(card, field_name)
+    check_usim_field(card, field_name)
+    read_value_before_write = read_field_data(card, field_name)
+
+    write_field_data(card, field_name, field_value, dry_run=dry_run)
+
+    ####### VERIFY PORTION #######
+    # Verify Changed Successfully by reading new value after write
+    read_value_after_write = read_field_data(card, field_name)
+
+    if read_value_after_write != field_value:
+        raise VerifyFieldError(
+            f"[{field_name}]: Verification Error. Read Value After Write != Value to Write argument. '{read_value_before_write}' => '{read_value_after_write}'"
+        )
+    else:
+        log.info(
+            f"[{field_name}]: write success '{read_value_before_write}' => '{read_value_after_write}'"
+        )
+
+    return read_value_before_write
+
+
+def read_write_to_fieldname(
     card: SimCard,
     field_name: str,
     value_to_write: str,
@@ -914,7 +947,7 @@ def main():
 
         # For each FieldName, FieldValue pair, write the value
         df.apply(
-            lambda row: write_to_fieldname(
+            lambda row: read_write_to_fieldname(
                 card,
                 row["FieldName"],
                 row["FieldValue"],
