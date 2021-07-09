@@ -8,11 +8,11 @@ for req_filename in requirements_files:
 
 setuptools.setup(
     name="sim_csv_script",
-    version="1.0.1",
+    version="1.1.0",
     description="Program SIM cards by importing CSV file",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
-    url="https://github.com/andrew-ma/sim_csv_script",
+    url="",
     author="Andrew Ma",
     classifiers=[
         "Programming Language :: Python :: 3.7",
