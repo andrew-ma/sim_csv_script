@@ -478,6 +478,9 @@ def read_fieldname_simple(
     check_isim_field(card, field_name)
     check_usim_field(card, field_name)
     read_value_before_write = read_field_data(card, field_name)
+
+    log.info(f"[{field_name}]: {read_value_before_write}")
+
     return read_value_before_write
 
 
@@ -485,15 +488,22 @@ def write_fieldname_simple(
     card: SimCard,
     field_name: str,
     field_value: str,
-    pin_adm: str,
     *,
     dry_run: bool = True,
+    num_chars_to_display=60,
 ) -> str:
     """This is used in dataframe.apply function to write and return Card's value for field_name"""
-    log.info(f"Writing fieldname simpmle with pin: {pin_adm}")
     check_isim_field(card, field_name)
     check_usim_field(card, field_name)
     read_value_before_write = read_field_data(card, field_name)
+
+    show_ellipses = "..." if len(read_value_before_write) > num_chars_to_display else ""
+    log.info(
+        f"[{field_name}]: {'Read Value':<12}: {read_value_before_write[:num_chars_to_display]}{show_ellipses}"
+    )
+    log.info(
+        f"[{field_name}]: {'Write Value':<12}: {field_value[:num_chars_to_display]}{show_ellipses}"
+    )
 
     write_field_data(card, field_name, field_value, dry_run=dry_run)
 
@@ -507,10 +517,10 @@ def write_fieldname_simple(
         )
     else:
         log.info(
-            f"[{field_name}]: write success '{read_value_before_write}' => '{read_value_after_write}'"
+            f"[{field_name}]: Verified successful write: '{read_value_before_write}' => '{read_value_after_write}'"
         )
 
-    return read_value_before_write
+    return read_value_after_write
 
 
 def read_write_to_fieldname(

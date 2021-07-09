@@ -4,7 +4,6 @@ import sys
 import logging
 import shlex
 import pandas as pd
-from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import (
     QHeaderView,
     QMainWindow,
@@ -61,10 +60,9 @@ def get_card_reader_args():
 
 def setup_logging_basic_config():
     LOG_FORMAT = "[%(levelname)s] %(message)s"
-    LOG_FORMAT = "[%(levelname)s] %(message)s -- line %(lineno)d"
 
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO,
         format=LOG_FORMAT,
         handlers=[logging.StreamHandler()],
     )
@@ -135,6 +133,7 @@ class WaitForSIMCardWorker(QObject):
         return running
 
     def run(self):
+        log.debug("Running WaitForSIMCardWorker run() function")
         while self.running():
             try:
                 # Every second, stop to check if we are still running
@@ -168,6 +167,8 @@ class ReadCardWorker(QObject):
         self._finish_code = 0
 
     def run(self):
+        log.debug("Running ReadCardWorker run() function")
+
         set_commands_cla_byte_and_sel_ctrl(self._scc, self._sl)
 
         card = get_card("auto", self._scc)
@@ -209,7 +210,6 @@ class ReadCardWorker(QObject):
 
 
 class WriteCardWorker(QObject):
-    started = pyqtSignal()
     finished = pyqtSignal(int, object)
     progress = pyqtSignal(int)
 
@@ -235,9 +235,9 @@ class WriteCardWorker(QObject):
         self._dry_run = dry_run
 
     def run(self):
-        self.started.emit()
+        log.debug("Running WriteCardWorker run() function")
 
-        set_commands_cla_byte_and_sel_ctrl(self._scc, self._sl)
+        # set_commands_cla_byte_and_sel_ctrl(self._scc, self._sl)
 
         card = get_card("auto", self._scc)
 
@@ -263,7 +263,9 @@ class WriteCardWorker(QObject):
         num_fields = len(self._df.index)
 
         # Submit the PIN to the sim card
-        check_pin_adm(card, pin_adm)
+        if not self._dry_run:
+            log.debug("Submitting PIN to card before writing values")
+            check_pin_adm(card, pin_adm)
 
         def write_each_field(row):
             percent_completed = int(((row.name + 1) / num_fields) * 100)
@@ -273,11 +275,8 @@ class WriteCardWorker(QObject):
                 card,
                 row["FieldName"],
                 row["FieldValue"],
-                pin_adm,
                 dry_run=self._dry_run,
             )
-
-        # FIRST READ EACH FIELD, UPDATE THE TABLE, THEN ASK THE USER IF THEY WANT TO WRITE
 
         # For each FieldName, FieldValue pair, write the value
         self._df["Value On Card"] = self._df.apply(
@@ -309,6 +308,8 @@ class SIM_CSV_GUI:
         self.selected_ADM_PIN_JSON_filename = None
 
         self.table_model = None
+
+        self.dry_run = True
 
     def set_ui_defaults(self):
         # ADM PIN file is disabled
@@ -598,27 +599,24 @@ class SIM_CSV_GUI:
 
     def write_mode(self):
         try:
-            log.info("GETTING PIN FROM INPUT FIELDS")
             pin_adm, imsi_to_pin_dict = self.get_adm_pin_from_input_fields()
 
             def read_then_write_callback(dataframe, scc, sl):
-                log.debug("IN READ THEN WRITE CALLBACK")
-
                 def ask_user_if_write_callback(*args, **kwargs):
                     # finished reading successfully
-
-                    log.info("Opening message box to ask user if want to write")
 
                     self.disable_input_elements()
 
                     def __accept_ask_write_callback():
-                        log.info("ACCePTED TO WRITE.  WRITING VALUES...")
+                        log.debug("Writing SIM Card")
                         self.write_card(
-                            dataframe, scc, sl, pin_adm, imsi_to_pin_dict, dry_run=False
+                            dataframe,
+                            scc,
+                            sl,
+                            pin_adm,
+                            imsi_to_pin_dict,
+                            dry_run=self.dry_run,
                         )
-
-                    def __reject_ask_write_callback():
-                        log.info("USER CHOSE TO NOT WRITE")
 
                     def __finished_ask_write_callback():
                         # Restore disabled elements
@@ -630,7 +628,6 @@ class SIM_CSV_GUI:
                         icon=QMessageBox.Warning,
                         default_button=QMessageBox.Cancel,
                         accept_slot=__accept_ask_write_callback,
-                        reject_slot=__reject_ask_write_callback,
                         finished_slot=__finished_ask_write_callback,
                     )
 
@@ -690,12 +687,12 @@ class SIM_CSV_GUI:
         write_card_worker.progress.connect(self.set_progress_bar_value)
 
         def __worker_finished(finish_code, new_dataframe):
-            log.debug(f"Read Card Worker Finished With {finish_code}")
             # Enable Buttons before callback is called, because callback might want to Disable buttons
             self.enable_input_elements()
 
             if finish_code == 0:
                 if callback is not None:
+                    log.debug("Running write_card() callback function")
                     callback(dataframe=dataframe, scc=scc, sl=sl)
 
             write_card_worker.deleteLater()
@@ -708,7 +705,6 @@ class SIM_CSV_GUI:
         write_card_worker.finished.connect(__worker_finished)
 
         def __thread_finished():
-            log.debug("Write Card Thread Finished")
             write_card_thread.deleteLater()
 
         write_card_thread.finished.connect(__thread_finished)
