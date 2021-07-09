@@ -290,6 +290,23 @@ class WriteCardWorker(QObject):
         self.finished.emit(self._finish_code, self._df)
 
 
+class TempSettings:
+    def __init__(self):
+        self._settings_dict = {}
+
+    def setValue(self, key, value):
+        self._settings_dict[key] = value
+
+    def value(self, key, defaultValue=None):
+        return self._settings_dict.get(key, defaultValue)
+
+    def status(self):
+        return 0
+
+    def sync(self):
+        pass
+
+
 class SIM_CSV_GUI:
     def __init__(self):
         self.app = QApplication(sys.argv)
@@ -310,6 +327,8 @@ class SIM_CSV_GUI:
         self.table_model = None
 
         self.dry_run = True
+
+        self.settings = TempSettings()
 
     def set_ui_defaults(self):
         # ADM PIN file is disabled
@@ -891,6 +910,15 @@ class SIM_CSV_GUI:
 
         return filename
 
+    def save_dialog_position(self, dialog):
+        self.settings.setValue("last_pos", dialog.pos())
+        self.settings.sync()
+
+    def restore_dialog_position(self, dialog):
+        last_pos = self.settings.value("last_pos")
+        if last_pos is not None:
+            dialog.move(last_pos)
+
     @staticmethod
     def newMesssageBox(
         text,
@@ -942,8 +970,10 @@ class SIM_CSV_GUI:
         )
         non_modal_msg_box.setModal(False)
 
-        # Save to instance variables, so other methods can close box
-        self.non_modal_msg_box = non_modal_msg_box
+        self.restore_dialog_position(non_modal_msg_box)
+        non_modal_msg_box.finished.connect(
+            lambda: self.save_dialog_position(non_modal_msg_box)
+        )
 
         non_modal_msg_box.show()
         return non_modal_msg_box
