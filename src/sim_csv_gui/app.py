@@ -106,6 +106,10 @@ class DataframeTableModel(QAbstractTableModel):
 
         return self
 
+    def getDataframe(self):
+        """Get a copy of the dataframe"""
+        return self.dataframe.copy()
+
     def clear(self):
         self.beginResetModel()
         self.dataframe = pd.DataFrame()
@@ -204,7 +208,7 @@ class ReadCardWorker(QObject):
         )
 
         differences = self._df["FieldValue"] != self._df["Value On Card"]
-        self._df["Differences"] = differences.apply(lambda b: "X" if b else "")
+        self._df["Diff"] = differences.apply(lambda b: "X" if b else "")
 
         self.finished.emit(self._finish_code, self._df)
 
@@ -285,7 +289,7 @@ class WriteCardWorker(QObject):
         )
 
         differences = self._df["FieldValue"] != self._df["Value On Card"]
-        self._df["Differences"] = differences.apply(lambda b: "X" if b else "")
+        self._df["Diff"] = differences.apply(lambda b: "X" if b else "")
 
         self.finished.emit(self._finish_code, self._df)
 
@@ -325,10 +329,44 @@ class SIM_CSV_GUI:
         self.selected_ADM_PIN_JSON_filename = None
 
         self.table_model = None
+        self.ascii_table_model = None
 
         self.dry_run = True
 
         self.settings = TempSettings()
+
+    def auto_resize_table(self):
+        # self.ui.tableView.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.ui.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        # for i in range():
+        #     self.ui.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+
+        num_sections = self.ui.tableView.horizontalHeader().count()
+
+        if num_sections >= 4:
+            # Resize the Diff column to not stretch
+            self.ui.tableView.horizontalHeader().setSectionResizeMode(
+                3, QHeaderView.ResizeToContents
+            )
+
+        if num_sections >= 1:
+            # Resize the FieldName column to fix its contents, to have more room for field values
+            self.ui.tableView.horizontalHeader().setSectionResizeMode(
+                0, QHeaderView.ResizeToContents
+            )
+
+        # Save stretched section sizes, so after we change to Interactive for dragging, we start out with saved stretched sizes
+        section_sizes = [
+            self.ui.tableView.horizontalHeader().sectionSize(i)
+            for i in range(num_sections)
+        ]
+        self.ui.tableView.horizontalHeader().setSectionResizeMode(
+            QHeaderView.Interactive
+        )
+
+        for i in range(num_sections):
+            self.ui.tableView.horizontalHeader().resizeSection(i, section_sizes[i])
 
     def set_ui_defaults(self):
         # ADM PIN file is disabled
@@ -340,9 +378,12 @@ class SIM_CSV_GUI:
         self.look_disabled(self.ui.filterCheckbox)
         self.ui.filterApplyButton.setDisabled(True)
 
+        # Can not show ascii view if no Table model, so disable it
+        self.ui.viewAsciiCheckbox.setCheckable(False)
+
         # table
-        # self.ui.tableView.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-        self.ui.tableView.horizontalHeader().setStretchLastSection(True)
+        self.auto_resize_table()
+
         self.ui.tableView.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
         self.ui.tableView.show()
 
@@ -380,6 +421,11 @@ class SIM_CSV_GUI:
         self.ui.readButton.clicked.connect(self.on_readButton_clicked)
         self.ui.writeButton.clicked.connect(self.on_writeButton_clicked)
 
+        # View ASCII Button
+        self.ui.viewAsciiCheckbox.stateChanged.connect(
+            self.on_viewAsciiCheckbox_stateChanged
+        )
+
     def add_validators(self):
         # admPinLineEdit_pattern = QRegExp("(0x)?.{1,8}")
         # admPinLineEdit_validator = QtGui.QRegExpValidator(
@@ -388,14 +434,14 @@ class SIM_CSV_GUI:
         # self.ui.admPinLineEdit.setValidator(admPinLineEdit_validator)
         pass
 
-    def validate_csv_file(self):
-        pass
+    def update_ascii_table(self, dataframe):
+        # update the ASCII Table Model
+        if self.ascii_table_model:
+            self.ascii_table_model = self.ascii_table_model.updateModel(dataframe)
+        else:
+            self.ascii_table_model = self.populate_table_using_dataframe(dataframe)
 
-    def validate_csv_file_with_filter(self):
-        pass
-
-    def filter_csv(self):
-        pass
+        self.auto_resize_table()
 
     def update_table(self, dataframe):
         # update the Table Model
@@ -403,6 +449,11 @@ class SIM_CSV_GUI:
             self.table_model = self.table_model.updateModel(dataframe)
         else:
             self.table_model = self.populate_table_using_dataframe(dataframe)
+
+        # enable ascii mode
+        self.ui.viewAsciiCheckbox.setCheckable(True)
+
+        self.auto_resize_table()
 
     def get_filter_command(self):
         assert self.ui.filterCheckbox.isChecked()
@@ -580,6 +631,9 @@ class SIM_CSV_GUI:
         )
 
     def read_mode(self):
+        # Don't show ascii table
+        self.ui.viewAsciiCheckbox.setChecked(False)
+
         def read_callback(dataframe, scc, sl):
             self.read_card(dataframe=dataframe, scc=scc, sl=sl)
 
@@ -609,14 +663,19 @@ class SIM_CSV_GUI:
         self.ui.writeGroup.setDisabled(True)
         self.ui.filterGroup.setDisabled(True)
         self.ui.readWriteGroup.setDisabled(True)
+        self.ui.viewAsciiCheckbox.setDisabled(True)
 
     def enable_input_elements(self):
         self.ui.dataGroup.setDisabled(False)
         self.ui.writeGroup.setDisabled(False)
         self.ui.filterGroup.setDisabled(False)
         self.ui.readWriteGroup.setDisabled(False)
+        self.ui.viewAsciiCheckbox.setDisabled(False)
 
     def write_mode(self):
+        # Don't show ascii table
+        self.ui.viewAsciiCheckbox.setChecked(False)
+
         try:
             pin_adm, imsi_to_pin_dict = self.get_adm_pin_from_input_fields()
 
@@ -848,9 +907,6 @@ class SIM_CSV_GUI:
             self.ui.admPinLineEdit.setText(admPin.removeprefix("0x"))
 
     # Filter
-    def on_filterCommandLineEdit_textChanged(self, text: str):
-        log.debug("on_filterCommandLineEdit_textChanged()")
-
     def on_filterCheckbox_stateChanged(self, state: int):
         log.debug("on_filterCheckbox_stateChanged()")
 
@@ -883,6 +939,35 @@ class SIM_CSV_GUI:
         except Exception as e:
             log.error(e)
             self.openErrorDialog(e.__class__.__name__, informative_text=str(e))
+
+    def on_viewAsciiCheckbox_stateChanged(self, state: int):
+        log.debug("on_viewAsciiCheckbox_stateChanged()")
+
+        if state == Qt.Checked:
+
+            ascii_df = self.table_model.getDataframe()
+
+            # Convert values in columns to ascii
+            ascii_df["FieldValue"] = ascii_df["FieldValue"].apply(
+                lambda value: bytes.fromhex(value).decode("ascii", errors="replace")
+            )
+
+            try:
+                ascii_df["Value On Card"] = ascii_df["Value On Card"].apply(
+                    lambda value: bytes.fromhex(value).decode("ascii", errors="replace")
+                )
+            except KeyError:
+                # KeyError if we haven't read card values yet, and 'Value On Card' column has not been created
+                pass
+
+            self.update_ascii_table(ascii_df)
+
+            # Show ascii model in table view
+            self.ui.tableView.setModel(self.ascii_table_model)
+
+        elif state == Qt.Unchecked:
+            # Show actual model in table view
+            self.ui.tableView.setModel(self.table_model)
 
     # Read/Write
     def on_readButton_clicked(self):
