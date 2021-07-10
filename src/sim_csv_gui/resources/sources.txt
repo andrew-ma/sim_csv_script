@@ -1,7 +1,0 @@
-images/
-sim_icon.png:  "https://icons8.com/icon/30436/sim-card"
-insert_card.png:  "https://icons8.com/icon/77104/insert-credit-card"
-
-sounds/
-write_sound.wav:  "https://mixkit.co/free-sound-effects"  Retro game notification
-

@@ -1,6 +1,6 @@
 import setuptools
 
-requirements_files = ["requirements.txt", "requirements_gui.txt"]
+requirements_files = ["requirements.txt"]
 required_packages = []
 for req_filename in requirements_files:
     with open(req_filename) as f:
@@ -8,7 +8,7 @@ for req_filename in requirements_files:
 
 setuptools.setup(
     name="sim_csv_script",
-    version="1.1.1",
+    version="1.2.0",
     description="Program SIM cards by importing CSV file",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
