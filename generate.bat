@@ -3,5 +3,5 @@ pushd %cd%
 cd %sim_csv_gui_dir%
 echo %cd%
 python generate.py --package-name sim_csv_gui --ui-files UI\ui_mainwindow.ui --resource-files resources\resources.qrc
-sim_csv_gui
 popd
+sim_csv_gui
