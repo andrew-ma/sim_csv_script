@@ -9,7 +9,6 @@ Fields and values are specified in a CSV file, and optionally a filter script ca
 * pysim
     * Right now it uses my fork, because of this commit (https://github.com/andrew-ma/pysim/commit/2f10406c9d3ba42787648fb0060475222531d905), and official repo doesn't accept pull requests on Github
 * pandas
-* PyQt5
 
 ## Installation
 ```
@@ -78,14 +77,6 @@ sim_csv_script {example.csv} --multiple --filter {python3 filter_script.py uncha
 ### Example Read Multiple with --filter and --ask-filter-args
 ```
 sim_csv_script {example.csv} --multiple --filter {python3 filter_script.py} --ask-filter-args
-```
-
----
-## __Graphical User Interface__
-
-Launch GUI
-```
-sim_csv_gui
 ```
 
 ---
