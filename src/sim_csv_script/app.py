@@ -795,19 +795,21 @@ def set_commands_cla_byte_and_sel_ctrl(scc, sl):
 
 
 def get_card(card_type, scc):
-    log.info("Autodetecting card type")
+    default_card = UsimAndIsimCard(scc)
+
+    if card_type is None:
+        return default_card
+
     try:
         card = card_detect(card_type, scc)
     except Exception as e:
         log.error(f"({e.__class__.__name__}) {e}")
-        return 1
+        card = None
 
     if card is None:
-        # If can't autodetect card, then use UsimandIsimCard
-        log.info("Can't autodetect card.  Using default card: UsimAndIsimCard")
-        card = UsimAndIsimCard(scc)
-
-    return card
+        return default_card
+    else:
+        return card
 
 
 def read_card_initial_data(card):
