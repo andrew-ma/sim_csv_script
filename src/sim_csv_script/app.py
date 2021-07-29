@@ -795,10 +795,8 @@ def set_commands_cla_byte_and_sel_ctrl(scc, sl):
 
 
 def get_card(card_type, scc):
-    default_card = UsimAndIsimCard(scc)
-
     if card_type is None:
-        return default_card
+        card_type = "auto"
 
     try:
         card = card_detect(card_type, scc)
@@ -807,6 +805,7 @@ def get_card(card_type, scc):
         card = None
 
     if card is None:
+        default_card = UsimAndIsimCard(scc)
         return default_card
     else:
         return card
