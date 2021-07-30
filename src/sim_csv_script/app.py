@@ -42,6 +42,10 @@ class UsimAndIsimCard(UsimCard, IsimCard):
 ####################  CUSTOM EXCEPTIONS ####################################
 
 
+class InvalidFieldError(Exception):
+    pass
+
+
 class InvalidDataframeError(Exception):
     pass
 
@@ -95,6 +99,35 @@ def is_even_number_hex_characters(test_string: str) -> bool:
     Returns False if string length is odd
     """
     return not (len(test_string) & 1)
+
+
+def check_that_field_is_valid(field_name, field_value):
+    """Validates passed values
+    1. FieldName must match keys (case-sensitive) in Pysim's EF, EF_USIM_ADF_map, or EF_ISIM_ADF_map python dictionaries
+    2. FieldValues must have even number of hex characters. If odd number of characters and correct, manually add a '0' in front of FieldValue in CSV file
+    3. FieldValues must be valid hex
+
+    InvalidFieldError: if doesn't meet checks above
+    """
+    log.info(f"Checking that field name {field_name} is valid")
+    if field_name not in ALL_FieldName_to_EF:
+        raise InvalidFieldError(f"Invalid Field Name: {field_name}")
+
+    ############################################################################
+
+    # Checking that field value hex strings have even number of characters (since each 2 character represents 1 byte)
+    log.info("Checking that field value has even number of hex characters")
+    if not is_even_number_hex_characters(field_value):
+        raise InvalidFieldError(f"Odd number of hex characters for field: {field_name}")
+
+    ############################################################################
+
+    # Are there any Invalid field values? Checking if they are valid hex
+    log.info("Checking that field value is valid hex")
+    if not is_valid_hex(field_value):
+        raise InvalidFieldError(f"Invalid hex value for field: {field_name}")
+
+    return None
 
 
 def check_that_fields_are_valid(df: pd.DataFrame):
