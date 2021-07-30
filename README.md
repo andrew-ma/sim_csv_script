@@ -19,7 +19,7 @@ python3 -m pip install --upgrade pip
 
 python3 -m pip install --upgrade --no-cache-dir https://github.com/andrew-ma/sim_csv_script/archive/main.zip
 ```
-> _Linux_: if you get a "swig: not found" error while running the installation command, first ensure that Python 3.7 or later is installed ('`python3 --version`').  If so, install swig with '`sudo apt install swig`' and retry the installation command.
+> _Linux_: if you get a "swig: not found" error while running the installation command, first ensure that Python 3.6 or later is installed ('`python3 --version`').  If so, install swig with '`sudo apt install swig`' and retry the installation command.
 
 > _Windows_: if you get a "swig.exe" error while running the installation command, you will need to download the swig prebuilt executable (http://www.swig.org/download.html), extract the zip, and add the folder to your PATH.  Then try running the installation again, and if it fails with a "Visual Studio Build Tools" error, then you will need to download https://visualstudio.microsoft.com/visual-cpp-build-tools/, install it, and select the "Desktop development with C++"
 
