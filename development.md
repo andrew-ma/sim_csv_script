@@ -1,7 +1,7 @@
 # Development
 
 ## System Requirements
-* Python 3.7 or later ([Python Installation Steps](python-installation.md))
+* Python 3.6 or later ([Python Installation Steps](python-installation.md))
 
 ## Python Package Dependencies:
 * pysim

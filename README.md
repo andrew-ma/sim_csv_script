@@ -3,7 +3,7 @@ Python script to read and write SIM cards.
 Fields and values are specified in a CSV file, and optionally a filter script can be supplied as a command line argument for dynamically changing the CSV contents for each card.
 
 ## System Requirements
-* Python 3.7 or later ([Python Installation Steps](python_installation_steps.md))
+* Python 3.6 or later ([Python Installation Steps](python_installation_steps.md))
 
 ## Python Package Dependencies:
 * pysim
@@ -11,16 +11,18 @@ Fields and values are specified in a CSV file, and optionally a filter script ca
 * pandas
 
 ## Installation
+> _Windows_: substitute `python3` with `python`
 ```
-pip install https://github.com/andrew-ma/sim_csv_script/archive/main.zip --upgrade --no-cache-dir
+# Upgrade pip if using older version of Python
+python3 -m pip install --upgrade pip
+
+
+python3 -m pip install --upgrade --no-cache-dir https://github.com/andrew-ma/sim_csv_script/archive/main.zip
 ```
 > _Linux_: if you get a "swig: not found" error while running the installation command, first ensure that Python 3.7 or later is installed ('`python3 --version`').  If so, install swig with '`sudo apt install swig`' and retry the installation command.
 
+> _Windows_: if you get a "swig.exe" error while running the installation command, you will need to download the swig prebuilt executable (http://www.swig.org/download.html), extract the zip, and add the folder to your PATH.  Then try running the installation again, and if it fails with a "Visual Studio Build Tools" error, then you will need to download https://visualstudio.microsoft.com/visual-cpp-build-tools/, install it, and select the "Desktop development with C++"
 
-## Uninstall
-```
-pip uninstall sim_csv_script -y
-```
 
 ---
 
@@ -55,28 +57,29 @@ sim_csv_script {example.csv} --multiple
 ```
 
 
-### **Filters**
->  On Windows, replace `python3` with `python`
-* You can create a filter script (doesn't have to be Python) that reads in a CSV file from STDIN, modifies it, and outputs a new CSV file to STDOUT
+### **Filter Script**
+> _Windows_: substitute `python3` with `python`
+* Provide a filter script (doesn't have to be Python) that reads in a CSV file from STDIN, modifies it, and outputs a new CSV file to STDOUT
 
-* The filter script should be able to function as a standalone program "`python3 filter_script.py unchanging_arg_1} < {example.csv}`"
-   * In Windows, running this in Powershell will cause an error because Powershell doesn't have the '<' STDIN redirect operator, so run this in Command Prompt
+* The filter script should function as a standalone program "`python3 filter_script.py {arg1} < {example.csv}`", and print out the filtered csv file
+   * On Windows, run this in Command Prompt because Powershell does not have the "<" operator
+   * In theory if standalone program works, copy and paste everything before the "<" as the `--filter`. (e.g. "`--filter python3 filter_script.py {arg1}`")
 
-* Filter script must return 0 on Success.  It should also raise Exceptions if it requires certain arguments.
+* Filter script must exit with a 0 return code to indicate Success.
+  * Any other return code will be treated as failure
 
-* Supply a valid command (that can run in the terminal) to --filter, like "`--filter python3 filter_script.py`"
-* Unchanging arguments can be specified immediately after the command.
-* If different arguments need to be specified for each card, then we can set --ask-filter-args, which will ask user to type new arguments that will be appended to --filter command. 
+* If each card needs different filter script arguments, specify `--ask-filter-args`.
+  * User will be prompted for input, which will be appended to end of `--filter` 
 
 
 ### Example Read Multiple with --filter
 ```
-sim_csv_script {example.csv} --multiple --filter {python3 filter_script.py unchanging_arg1}
+sim_csv_script {example.csv} --multiple --filter python3 filter_script.py {arg1}
 ```
 
 ### Example Read Multiple with --filter and --ask-filter-args
 ```
-sim_csv_script {example.csv} --multiple --filter {python3 filter_script.py} --ask-filter-args
+sim_csv_script {example.csv} --multiple --filter python3 filter_script.py --ask-filter-args
 ```
 
 ---

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from __future__ import annotations
 import argparse
 import os
 import sys
@@ -9,7 +8,7 @@ import subprocess
 from io import StringIO
 import shlex
 import pandas as pd
-from typing import Optional, Union
+from typing import Optional, Union, List
 from pySim.ts_51_011 import EF
 from pySim.ts_31_102 import EF_USIM_ADF_map
 from pySim.ts_31_103 import EF_ISIM_ADF_map
@@ -207,7 +206,7 @@ def run_filter_command_on_csv_bytes(
 
 
 def check_for_added_fields_after_filter(
-    previous_field_names: list[str], after_filter_field_names: list[str]
+    previous_field_names: List[str], after_filter_field_names: List[str]
 ):
     # only can drop fields, not add new fields
     if (len(after_filter_field_names) > len(previous_field_names)) or (
@@ -819,7 +818,7 @@ def set_commands_cla_byte_and_sel_ctrl(scc, sl):
     log.info("Testing for Classic SIM or UICC")
     (res, sw) = sl.send_apdu(scc.cla_byte + "a4" + scc.sel_ctrl + "02" + "3f00")
     if sw == "6e00":
-        log.info("Just a Classic SIM")
+        log.info("Is a Classic SIM")
         # Just a Classic SIM
         scc.cla_byte = "a0"
         scc.sel_ctrl = "0000"
