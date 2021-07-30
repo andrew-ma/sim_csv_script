@@ -693,11 +693,18 @@ def get_args():
         "CSV_FILE",
         help="Read FieldNames and FieldValues from CSV file",
         type=CSVFileArgType,
+        nargs="?"
+    )
+    parser.add_argument(
+        "--list-field-names",
+        help="Lists all possible field names",
+        default=False,
+        action="store_true"
     )
     parser.add_argument(
         "--type",
         dest="card_type",
-        help="SimCard type (use '--type list' to view)",
+        help="SimCard type (use '--type list' to list possible types)",
         default="auto",
     )
     parser.add_argument(
@@ -761,6 +768,18 @@ def get_args():
     parser.set_defaults(pcsc_dev=0)
 
     args = parser.parse_args()
+
+
+    if args.card_type == "list":
+        print(repr([card_cls.name for card_cls in _cards_classes]))
+        parser.exit()
+
+    if args.list_field_names:
+        print(repr(list(ALL_FieldName_to_EF.keys())))
+        parser.exit()
+
+    if args.CSV_FILE is None:
+        parser.error("the following arguments are required: CSV_FILE")
 
     if args.write:
         if args.pin_adm is None and args.pin_adm_json is None:
@@ -889,11 +908,6 @@ def main():
     formatter = logging.Formatter(LOG_FORMAT)
     file_handler.setFormatter(formatter)
     log.addHandler(file_handler)
-
-    if args.card_type == "list":
-        for card_cls in _cards_classes:
-            log.info(card_cls.name)
-        return 0
 
     ############################################################################
     if not args.filter:
