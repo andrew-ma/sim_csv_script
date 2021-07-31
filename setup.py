@@ -8,7 +8,7 @@ for req_filename in requirements_files:
 
 setuptools.setup(
     name="sim_csv_script",
-    version="1.3.2",
+    version="1.3.3",
     description="Program SIM cards by importing CSV file",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},

@@ -100,17 +100,33 @@ def is_even_number_hex_characters(test_string: str) -> bool:
     return not (len(test_string) & 1)
 
 
+def has_spaces(test_string: str) -> bool:
+    """
+    Returns True if there are spaces
+    Returns False if there are no spaces
+    """
+    return " " in test_string
+
+
 def check_that_field_is_valid(field_name, field_value):
     """Validates passed values
     1. FieldName must match keys (case-sensitive) in Pysim's EF, EF_USIM_ADF_map, or EF_ISIM_ADF_map python dictionaries
-    2. FieldValues must have even number of hex characters. If odd number of characters and correct, manually add a '0' in front of FieldValue in CSV file
-    3. FieldValues must be valid hex
+    2. FieldValues must not have spaces
+    3. FieldValues must have even number of hex characters. If odd number of characters and correct, manually add a '0' in front of FieldValue in CSV file
+    4. FieldValues must be valid hex
 
     InvalidFieldError: if doesn't meet checks above
     """
     log.info(f"Checking that field name {field_name} is valid")
     if field_name not in ALL_FieldName_to_EF:
         raise InvalidFieldError(f"Invalid Field Name: {field_name}")
+
+    ############################################################################
+
+    # Checking that there are no spaces
+    log.info("Checking that field value does not have any spaces")
+    if has_spaces(field_value):
+        raise InvalidFieldError(f"Field values can not contain spaces")
 
     ############################################################################
 
@@ -133,8 +149,9 @@ def check_that_fields_are_valid(df: pd.DataFrame):
     """Validates CSV file parsed dataframe
     1. FieldName must match keys (case-sensitive) in Pysim's EF, EF_USIM_ADF_map, or EF_ISIM_ADF_map python dictionaries
     2. There can't be FieldName duplicates
-    3. FieldValues must have even number of hex characters. If odd number of characters and correct, manually add a '0' in front of FieldValue in CSV file
-    4. FieldValues must be valid hex
+    3. FieldValues must not have spaces
+    4. FieldValues must have even number of hex characters. If odd number of characters and correct, manually add a '0' in front of FieldValue in CSV file
+    5. FieldValues must be valid hex
 
     InvalidDataframeError: if doesn't meet checks above
     """
@@ -153,6 +170,15 @@ def check_that_fields_are_valid(df: pd.DataFrame):
         )
 
     ############################################################################
+    
+    # Checking that there are no spaces
+    log.info("Checking that field value does not have any spaces")
+    has_spaces_df = df["FieldValue"].apply(has_spaces)
+    if (has_spaces_df.any()):
+        raise InvalidDataframeError(f"Found spaces in fields: {df['FieldName'][has_spaces_df].to_list()}")
+
+    ############################################################################
+
 
     # Checking that field value hex strings have even number of characters (since each 2 character represents 1 byte)
     log.info("Checking that field values have even number of hex characters")
@@ -203,6 +229,30 @@ def run_filter_command_on_csv_bytes(
             raise FilterCSVError("Failed to parse filtered csv")
 
         return df
+
+
+def filter_dataframe(df, filter_command):
+    """This takes in an existing dataframe, converts it to bytes, and passes it to filter command's STDIN
+    It then returns a new dataframe object
+
+    Args:
+        df ([type]): [description]
+        filter_command ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
+    
+
+    # Convert dataframe to bytes, so it can be passed to filter script's STDIN
+    df_bytes = df.to_csv(index=False).encode()
+
+    try:
+        df = run_filter_command_on_csv_bytes(df_bytes, filter_command)
+    except Exception as e:
+        raise FilterCSVError(str(e))
+
+    return df
 
 
 def check_for_added_fields_after_filter(
