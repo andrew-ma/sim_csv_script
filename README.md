@@ -34,6 +34,11 @@ python3 -m pip install --upgrade --no-cache-dir https://github.com/andrew-ma/sim
 sim_csv_script -h
 ```
 
+### List valid field names that can used in CSV file
+```
+sim_csv_script --list-field-names
+```
+
 ### Example Read Single
 ```
 sim_csv_script {example.csv}
