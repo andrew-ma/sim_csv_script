@@ -611,7 +611,7 @@ def write_fieldname_simple(
 def read_write_to_fieldname(
     card: SimCard,
     field_name: str,
-    value_to_write: str,
+    field_value: str,
     *,
     dry_run=True,
     num_chars_to_display=50,
@@ -629,6 +629,9 @@ def read_write_to_fieldname(
 
         VerifyFieldError: if verification error
     """
+    # Convert field value to lowercase since pysim reads and writes lowercase hex values
+    field_value = field_value.lower()
+
     check_isim_field(card, field_name)
     check_usim_field(card, field_name)
 
@@ -639,10 +642,10 @@ def read_write_to_fieldname(
         f"[{field_name}]: {'Read Value':<12}: {read_value_before_write[:num_chars_to_display]}{show_ellipses}"
     )
     log.info(
-        f"[{field_name}]: {'Write Value':<12}: {value_to_write[:num_chars_to_display]}{show_ellipses}"
+        f"[{field_name}]: {'Write Value':<12}: {field_value[:num_chars_to_display]}{show_ellipses}"
     )
 
-    if value_to_write == read_value_before_write:
+    if field_value == read_value_before_write:
         # Don't Write if Current value on card == Value to Write, but return True immediately
         log.info(f"[{field_name}]: Skipping Write since unchanged")
         return True
@@ -650,8 +653,8 @@ def read_write_to_fieldname(
         # Print the index where the differences begin
         diff_indexes = [
             i
-            for i in range(len(value_to_write))
-            if read_value_before_write[i] != value_to_write[i]
+            for i in range(len(field_value))
+            if read_value_before_write[i] != field_value[i]
         ]
         diff_symbols = list(" " * num_chars_to_display)
         for i in diff_indexes:
@@ -663,19 +666,19 @@ def read_write_to_fieldname(
 
     ####### WRITE PORTION #######
     if not dry_run:
-        write_field_data(card, field_name, value_to_write, dry_run=dry_run)
+        write_field_data(card, field_name, field_value, dry_run=dry_run)
 
         ####### VERIFY PORTION #######
         # Verify Changed Successfully by reading new value after write
         read_value_after_write = read_field_data(card, field_name)
 
-        if read_value_after_write != value_to_write:
+        if field_value != read_value_after_write:
             raise VerifyFieldError(
-                f"[{field_name}]: Verification Error. Read Value After Write != Value to Write argument. '{read_value_before_write}' => '{read_value_after_write}'"
+                f"[{field_name}]: Verification Error. FieldValue argument ('{field_value}') != Card's value after writing ('{read_value_after_write}')"
             )
         else:
             log.info(
-                f"[{field_name}]: write success '{read_value_before_write}' => '{read_value_after_write}'"
+                f"[{field_name}]: Verified successful write: Before writing ('{read_value_before_write}') => After writing ('{read_value_after_write}')"
             )
 
     return True
