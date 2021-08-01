@@ -575,6 +575,9 @@ def write_fieldname_simple(
     num_chars_to_display=60,
 ) -> str:
     """This is used in dataframe.apply function to write and return Card's value for field_name"""
+    # Convert field value to lowercase since pysim reads and writes lowercase hex values
+    field_value = field_value.lower()
+
     check_isim_field(card, field_name)
     check_usim_field(card, field_name)
     read_value_before_write = read_field_data(card, field_name)
@@ -593,13 +596,13 @@ def write_fieldname_simple(
     # Verify Changed Successfully by reading new value after write
     read_value_after_write = read_field_data(card, field_name)
 
-    if read_value_after_write != field_value:
+    if field_value != read_value_after_write:
         raise VerifyFieldError(
-            f"[{field_name}]: Verification Error. Read Value After Write != Value to Write argument. '{read_value_before_write}' => '{read_value_after_write}'"
+            f"[{field_name}]: Verification Error. FieldValue argument ('{field_value}') != Card's value after writing ('{read_value_after_write}')"
         )
     else:
         log.info(
-            f"[{field_name}]: Verified successful write: '{read_value_before_write}' => '{read_value_after_write}'"
+            f"[{field_name}]: Verified successful write: Before writing ('{read_value_before_write}') => After writing ('{read_value_after_write}')"
         )
 
     return read_value_after_write
