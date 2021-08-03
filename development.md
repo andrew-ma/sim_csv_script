@@ -21,4 +21,23 @@ pip uninstall sim_csv_script -y
 pip uninstall -r requirements.txt -y
 ```
 
---
+---
+
+## Creating a Source Distribution
+> Source distribution file ("sim_csv_script-VERSION.tar.gz") will be created in *dist/* folder
+
+Windows
+```
+make_distribution.bat
+```
+
+## Installing Source Distribution
+Windows
+```
+python -m pip install {sim_csv_script-VERSION.tar.gz}
+```
+
+Linux
+```
+python3 -m pip install {sim_csv_script-VERSION.tar.gz}
+```
