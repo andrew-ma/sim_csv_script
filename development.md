@@ -5,7 +5,7 @@
 
 ---
 
-## Creating a Source Distribution
+## Creating Source Distribution (`.tar.gz` file)
 * Source distribution file (*`sim_csv_script*-VERSION.tar.gz`*) will be created in *dist/* folder
 
 Windows
@@ -18,7 +18,7 @@ Linux
 # TODO: create make_distribution.bat equivalent bash script
 ```
 
-## Installing Source Distribution
+## Installing Source Distribution (`.tar.gz` file)
 Windows
 ```
 python -m pip install {sim_csv_script-VERSION.tar.gz}
