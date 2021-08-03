@@ -1,2 +1,2 @@
-pysim @ https://github.com/andrew-ma/pysim/archive/master.zip
+pysimcard
 pandas

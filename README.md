@@ -5,23 +5,36 @@ Fields and values are specified in a CSV file, and optionally a filter script ca
 ## System Requirements
 * Python 3.6 or later ([Python Installation Steps](python_installation_steps.md))
 
-## Python Package Dependencies:
-* pysim
-    * Right now it uses my fork, because of this commit (https://github.com/andrew-ma/pysim/commit/2f10406c9d3ba42787648fb0060475222531d905), and official repo doesn't accept pull requests on Github
-* pandas
 
 ## Installation
-> _Windows_: substitute `python3` with `python`
+### Method #1: Source Distribution (`.tar.gz` file)
+Windows
 ```
-# Upgrade pip if using older version of Python
-python3 -m pip install --upgrade pip
-
-
-python3 -m pip install --upgrade --no-cache-dir https://github.com/andrew-ma/sim_csv_script/archive/main.zip
+python -m pip install --upgrade {sim_csv_script-VERSION.tar.gz}
 ```
-> _Linux_: if you get a "swig: not found" error while running the installation command, first ensure that Python 3.6 or later is installed ('`python3 --version`').  If so, install swig with '`sudo apt install swig`' and retry the installation command.
 
-> _Windows_: if you get a "swig.exe" error while running the installation command, you will need to download the swig prebuilt executable (http://www.swig.org/download.html), extract the zip, and add the folder to your PATH.  Then try running the installation again, and if it fails with a "Visual Studio Build Tools" error, then you will need to download https://visualstudio.microsoft.com/visual-cpp-build-tools/, install it, and select the "Desktop development with C++"
+Linux
+```
+python3 -m pip install --upgrade {sim_csv_script-VERSION.tar.gz}
+```
+
+### Method #2: Source Code
+* First, change into the directory that contains *`setup.py`* or *`setup.cfg`* file
+
+Windows
+```
+python -m pip install --upgrade -e .
+```
+
+> _Windows_: if you get a "swig.exe" error while running the installation command, you will need to download the swig prebuilt executable (http://www.swig.org/download.html), extract the zip, and add the folder to your PATH.  Try running the installation steps again, and if it fails with a "Visual Studio Build Tools" error, then you will need to download https://visualstudio.microsoft.com/visual-cpp-build-tools/, install it, and select the "Desktop development with C++"
+
+
+Linux
+```
+python3 -m pip install --upgrade -e .
+```
+
+> _Linux_: if you get a "swig: not found" error while running the installation command, first ensure that Python 3.6 or later is installed (`python3 --version`).  If so, install swig with `sudo apt install swig` and retry the installation command
 
 
 ---
