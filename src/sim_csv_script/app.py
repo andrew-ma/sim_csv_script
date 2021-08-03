@@ -739,12 +739,18 @@ def JSONFileArgType(filename):
     return json_dict
 
 
+def get_package_version():
+        import pkg_resources
+        return pkg_resources.require("sim_csv_script")[0].version
+
 def get_args():
     parser = argparse.ArgumentParser(
         # prog="pySim-read",
         description="Tool for reading some parts of a SIM card",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+
+    parser.add_argument("--version", action="version", version=get_package_version())
     parser.add_argument(
         "CSV_FILE",
         help="Read FieldNames and FieldValues from CSV file",
